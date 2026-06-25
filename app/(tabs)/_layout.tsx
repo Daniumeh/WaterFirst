@@ -1,13 +1,15 @@
 import { SymbolView } from 'expo-symbols';
 import { Redirect, Tabs } from 'expo-router';
 
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
+import {
+  bottomNavigationColors,
+  bottomNavigationStyle,
+} from '@/src/components/dashboard/BottomNavigation';
 import { useProfileStore } from '@/src/store/profileStore';
 import { hydraLockTheme } from '@/src/theme/paperTheme';
 
 export default function TabLayout() {
   const onboardingComplete = useProfileStore((state) => state.profile.onboardingComplete);
-  const headerShown = useClientOnlyValue(false, true);
 
   if (!onboardingComplete) {
     return <Redirect href="/onboarding" />;
@@ -16,18 +18,10 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: hydraLockTheme.colors.primary,
-        tabBarInactiveTintColor: hydraLockTheme.colors.onSurfaceVariant,
-        tabBarStyle: {
-          backgroundColor: '#071827',
-          borderTopColor: '#14344A',
-          height: 64,
-          paddingBottom: 8,
-          paddingTop: 8,
-        },
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
-        headerShown,
+        tabBarActiveTintColor: bottomNavigationColors.active,
+        tabBarInactiveTintColor: bottomNavigationColors.inactive,
+        tabBarStyle: bottomNavigationStyle,
+        headerShown: false,
         headerStyle: { backgroundColor: '#061B2E' },
         headerTintColor: hydraLockTheme.colors.onSurface,
         headerTitleStyle: { fontWeight: '700' },
@@ -35,7 +29,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Today',
+          title: 'Dashboard',
           tabBarIcon: ({ color }) => (
             <SymbolView
               name={{
@@ -67,6 +61,23 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="challenges"
+        options={{
+          title: 'Challenges',
+          tabBarIcon: ({ color }) => (
+            <SymbolView
+              name={{
+                ios: 'target',
+                android: 'emoji_events',
+                web: 'emoji_events',
+              }}
+              tintColor={color}
+              size={28}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="reminders"
         options={{
           title: 'Reminders',
@@ -84,15 +95,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="settings"
+        name="profile"
         options={{
-          title: 'Settings',
+          title: 'Profile',
           tabBarIcon: ({ color }) => (
             <SymbolView
               name={{
-                ios: 'gearshape.fill',
-                android: 'settings',
-                web: 'settings',
+                ios: 'person.crop.circle.fill',
+                android: 'person',
+                web: 'person',
               }}
               tintColor={color}
               size={28}

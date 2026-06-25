@@ -54,8 +54,8 @@ describe('HydraLock screens', () => {
     }));
     const view = await renderWithTheme(<TodayScreen />);
 
-    await fireEvent.press(view.getByText('+250 ml'));
+    await fireEvent.press(view.getByText('+25cl'));
 
-    expect(view.getByText('250 ml logged of 2850 ml')).toBeTruthy();
+    expect(view.getByText('25cl / 285cl')).toBeTruthy();
   });
 });
