@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 import { calculateProgress, generateCheckpoints } from '@/src/features/hydration/hydrationMath';
+import { saveWaterLog } from '@/src/features/hydration/hydrationRepository';
 import type {
   HydrationCheckpoint,
   HydrationGoal,
@@ -46,6 +47,8 @@ export const useHydrationStore = create<HydrationStore>((set) => ({
         ...state.logs,
       ];
       const loggedMl = logs.reduce((total, log) => total + log.amountMl, 0);
+
+      void saveWaterLog(safeAmount);
 
       return {
         logs,

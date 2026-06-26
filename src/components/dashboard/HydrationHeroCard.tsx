@@ -2,7 +2,7 @@ import { StyleSheet, View } from 'react-native';
 import { Card, Text } from 'react-native-paper';
 
 import { formatHydrationAmount, type HydrationUnit } from '@/src/features/hydration/units';
-import { colors, radius, shadow, spacing } from '@/src/theme/tokens';
+import { colors, glassShadow, radius, spacing, type } from '@/src/theme/tokens';
 
 import { KidneyProgressRing } from './KidneyProgressRing';
 import { UnitSwitcher } from './UnitSwitcher';
@@ -26,11 +26,16 @@ export function HydrationHeroCard({
 
   return (
     <Card mode="contained" style={styles.card}>
+      <View style={styles.capsuleRail} />
+      <View style={styles.capsuleWash} />
       <Card.Content style={styles.content}>
         <View style={styles.topRow}>
           <View style={styles.progressLabelRow}>
-            <Text style={styles.dropIcon}>♢</Text>
-            <Text style={styles.title}>{isFull ? 'Full' : "Today's Progress"}</Text>
+            <View style={styles.dropIcon} />
+            <View>
+              <Text style={styles.eyebrow}>Hydration capsule</Text>
+              <Text style={styles.title}>{isFull ? 'Full reservoir' : "Today's Progress"}</Text>
+            </View>
           </View>
           <UnitSwitcher unit={unit} onChange={onUnitChange} />
         </View>
@@ -47,6 +52,7 @@ export function HydrationHeroCard({
             </Text>
             <Text style={styles.dailyGoal}>Daily Goal</Text>
             <View style={styles.statusBox}>
+              <View style={styles.statusDot} />
               <Text style={styles.statusText}>{isFull ? 'Fully Replenished' : 'On Track'}</Text>
               <Text style={styles.statusSubtext}>{isFull ? 'Goal Completed Today' : 'Keep it up!'}</Text>
             </View>
@@ -54,6 +60,11 @@ export function HydrationHeroCard({
 
           <View style={styles.ringColumn}>
             <KidneyProgressRing progress={progress} />
+            <View style={styles.meterTicks}>
+              <View style={[styles.tick, percentComplete > 0 && styles.tickActive]} />
+              <View style={[styles.tick, percentComplete >= 50 && styles.tickActive]} />
+              <View style={[styles.tick, percentComplete >= 100 && styles.tickActive]} />
+            </View>
             <Text style={styles.remainingText}>
               {isFull
                 ? 'Goal Completed Today'
@@ -73,10 +84,31 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     overflow: 'hidden',
     backgroundColor: colors.midnight,
-    ...shadow,
+    ...glassShadow,
+  },
+  capsuleRail: {
+    position: 'absolute',
+    left: -28,
+    top: 28,
+    width: 6,
+    height: 188,
+    borderRadius: 3,
+    backgroundColor: colors.cyan,
+    opacity: 0.7,
+  },
+  capsuleWash: {
+    position: 'absolute',
+    right: -56,
+    bottom: -46,
+    width: 190,
+    height: 92,
+    borderRadius: 46,
+    backgroundColor: colors.wash,
+    transform: [{ rotate: '-18deg' }],
   },
   content: {
-    gap: spacing.md,
+    gap: spacing.lg,
+    paddingBottom: spacing.lg,
   },
   topRow: {
     alignItems: 'center',
@@ -89,9 +121,12 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   dropIcon: {
-    color: colors.cyan,
-    fontSize: 24,
-    fontWeight: '900',
+    width: 13,
+    height: 23,
+    borderColor: colors.cyan,
+    borderRadius: 8,
+    borderWidth: 2,
+    backgroundColor: 'rgba(32, 199, 255, 0.16)',
   },
   heroRow: {
     alignItems: 'center',
@@ -101,7 +136,14 @@ const styles = StyleSheet.create({
   title: {
     color: colors.text,
     fontSize: 18,
+    fontWeight: '900',
+  },
+  eyebrow: {
+    color: colors.cyanSoft,
+    fontSize: 10,
     fontWeight: '800',
+    letterSpacing: 0,
+    textTransform: 'uppercase',
   },
   metricColumn: {
     flex: 0.9,
@@ -109,6 +151,7 @@ const styles = StyleSheet.create({
   },
   percent: {
     color: colors.text,
+    fontFamily: type.data,
     fontWeight: '900',
   },
   percentSymbol: {
@@ -118,6 +161,7 @@ const styles = StyleSheet.create({
   },
   amountLine: {
     color: colors.muted,
+    fontFamily: type.data,
     fontWeight: '700',
   },
   amountHighlight: {
@@ -130,13 +174,23 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   statusBox: {
+    alignItems: 'center',
     alignSelf: 'flex-start',
-    borderColor: colors.border,
+    borderColor: colors.line,
     borderRadius: radius.md,
     borderWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    backgroundColor: 'rgba(13, 38, 58, 0.78)',
+    backgroundColor: colors.glass,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.green,
   },
   statusText: {
     color: colors.green,
@@ -144,6 +198,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   statusSubtext: {
+    width: '100%',
     color: colors.text,
     marginTop: 2,
   },
@@ -155,7 +210,21 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 13,
     fontWeight: '700',
-    marginTop: -spacing.sm,
+    marginTop: spacing.xs,
     textAlign: 'center',
+  },
+  meterTicks: {
+    flexDirection: 'row',
+    gap: 5,
+    marginTop: -spacing.sm,
+  },
+  tick: {
+    width: 18,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: colors.border,
+  },
+  tickActive: {
+    backgroundColor: colors.cyan,
   },
 });

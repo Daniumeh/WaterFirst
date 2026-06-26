@@ -10,11 +10,13 @@ import {
   TextInput,
 } from 'react-native-paper';
 
+import { signUpWithProfile } from '@/src/features/auth/authService';
 import { calculateDailyGoalMl, generateCheckpoints } from '@/src/features/hydration/hydrationMath';
+import { saveOnboardingPlan } from '@/src/features/hydration/hydrationRepository';
 import type { ActivityLevel, Climate, UnitPreference } from '@/src/features/hydration/types';
 import { useHydrationStore } from '@/src/store/hydrationStore';
 import { useProfileStore } from '@/src/store/profileStore';
-import { colors, radius, shadow, spacing } from '@/src/theme/tokens';
+import { colors, glassShadow, radius, spacing, type } from '@/src/theme/tokens';
 
 const activityOptions: { label: string; value: ActivityLevel }[] = [
   { label: 'Light', value: 'light' },
@@ -58,6 +60,8 @@ export default function OnboardingScreen() {
   const [firstName, setFirstName] = useState(profile.firstName || profile.name);
   const [lastName, setLastName] = useState(profile.lastName);
   const [email, setEmail] = useState(profile.email);
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [weight, setWeight] = useState(String(profile.weight));
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>(profile.activityLevel);
   const [activityDescription, setActivityDescription] = useState(profile.activityDescription);
@@ -67,6 +71,9 @@ export default function OnboardingScreen() {
   const [unitPreference, setUnitPreference] = useState<UnitPreference>(profile.unitPreference);
   const [notificationConsent, setNotificationConsent] = useState(profile.notificationConsent);
   const [softLockConsent, setSoftLockConsent] = useState(profile.softLockConsent);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [authMessage, setAuthMessage] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const recommendedGoalMl = useMemo(
     () =>
@@ -85,13 +92,20 @@ export default function OnboardingScreen() {
 
   const activeStep = steps[step];
   const emailLooksValid = /^\S+@\S+\.\S+$/.test(email.trim());
+  const passwordLooksValid = password.length >= 8;
+  const passwordsMatch = password === confirmPassword;
   const canContinue =
-    (step === 0 && firstName.trim().length > 0 && lastName.trim().length > 0 && emailLooksValid) ||
+    (step === 0 &&
+      firstName.trim().length > 0 &&
+      lastName.trim().length > 0 &&
+      emailLooksValid &&
+      passwordLooksValid &&
+      passwordsMatch) ||
     (step === 1 && Number(weight) > 0 && wakeTime.trim().length > 0 && sleepTime.trim().length > 0) ||
     (step === 2 && activityDescription.trim().length >= 12) ||
     (step === 3 && softLockConsent);
 
-  const activatePlan = () => {
+  const activatePlan = async () => {
     const cleanFirstName = firstName.trim();
     const cleanLastName = lastName.trim();
     const savedProfile = {
@@ -110,14 +124,45 @@ export default function OnboardingScreen() {
       softLockConsent,
       onboardingComplete: true,
     };
-
-    completeOnboarding(savedProfile);
-    setGoal({
+    const goal = {
       targetMl: recommendedGoalMl,
       manualOverrideMl: null,
       unitPreference,
-    });
-    setCheckpoints(generateCheckpoints(recommendedGoalMl, wakeTime, sleepTime));
+    };
+    const checkpoints = generateCheckpoints(recommendedGoalMl, wakeTime, sleepTime);
+
+    setIsSubmitting(true);
+    setAuthError(null);
+    setAuthMessage(null);
+
+    try {
+      const result = await signUpWithProfile({
+        email: savedProfile.email,
+        password,
+        profile: savedProfile,
+      });
+
+      completeOnboarding(savedProfile);
+      setGoal(goal);
+      setCheckpoints(checkpoints);
+
+      if (result.session) {
+        await saveOnboardingPlan({
+          checkpoints,
+          goal,
+          profile: savedProfile,
+        });
+        setAuthMessage('Account created and hydration plan synced.');
+      } else if (result.needsEmailConfirmation) {
+        setAuthMessage('Account created. Check your email to confirm your session.');
+      } else {
+        setAuthMessage('Hydration plan saved locally. Supabase config is not available.');
+      }
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Could not create your account.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -125,7 +170,8 @@ export default function OnboardingScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={styles.keyboard}
     >
-      <View style={styles.glow} />
+      <View style={styles.reservoirBand} />
+      <View style={styles.waterline} />
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.headerCard}>
           <View style={styles.logoMark}>
@@ -179,8 +225,30 @@ export default function OnboardingScreen() {
                 value={email}
                 onChangeText={setEmail}
               />
+              <TextInput
+                label="Password"
+                mode="outlined"
+                secureTextEntry
+                style={styles.input}
+                value={password}
+                onChangeText={setPassword}
+              />
+              <TextInput
+                label="Confirm password"
+                mode="outlined"
+                secureTextEntry
+                style={styles.input}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+              />
               {email.length > 0 && !emailLooksValid ? (
                 <Text style={styles.warning}>Enter a valid email to continue.</Text>
+              ) : null}
+              {password.length > 0 && !passwordLooksValid ? (
+                <Text style={styles.warning}>Use at least 8 characters for your password.</Text>
+              ) : null}
+              {confirmPassword.length > 0 && !passwordsMatch ? (
+                <Text style={styles.warning}>Passwords must match.</Text>
               ) : null}
             </View>
           ) : null}
@@ -289,6 +357,8 @@ export default function OnboardingScreen() {
               {!softLockConsent ? (
                 <Text style={styles.warning}>Soft-lock consent is required to activate HydraLock.</Text>
               ) : null}
+              {authError ? <Text style={styles.warning}>{authError}</Text> : null}
+              {authMessage ? <Text style={styles.success}>{authMessage}</Text> : null}
             </View>
           ) : null}
         </View>
@@ -304,11 +374,12 @@ export default function OnboardingScreen() {
             Back
           </Button>
           <Button
-            disabled={!canContinue}
+            disabled={isSubmitting || !canContinue}
+            loading={isSubmitting}
             mode="contained"
             onPress={() => {
               if (step === steps.length - 1) {
-                activatePlan();
+                void activatePlan();
                 return;
               }
 
@@ -348,14 +419,23 @@ const styles = StyleSheet.create({
     backgroundColor: colors.ink,
   },
   glow: {
+    display: 'none',
+  },
+  reservoirBand: {
     position: 'absolute',
-    top: -70,
-    right: -60,
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    backgroundColor: '#0A4C74',
-    opacity: 0.55,
+    left: 0,
+    right: 0,
+    top: 110,
+    height: 110,
+    backgroundColor: 'rgba(20, 125, 255, 0.12)',
+  },
+  waterline: {
+    position: 'absolute',
+    left: spacing.lg,
+    right: spacing.lg,
+    top: 86,
+    height: 1,
+    backgroundColor: colors.line,
   },
   container: {
     gap: spacing.lg,
@@ -365,21 +445,23 @@ const styles = StyleSheet.create({
   },
   headerCard: {
     alignItems: 'center',
-    borderColor: colors.border,
+    borderColor: colors.line,
     borderRadius: radius.xl,
     borderWidth: 1,
     gap: spacing.sm,
     padding: spacing.xl,
-    backgroundColor: colors.midnight,
-    ...shadow,
+    backgroundColor: colors.glass,
+    ...glassShadow,
   },
   logoMark: {
     alignItems: 'center',
     justifyContent: 'center',
     width: 74,
     height: 74,
-    borderRadius: 37,
-    backgroundColor: '#062B45',
+    borderColor: colors.line,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    backgroundColor: 'rgba(3, 16, 28, 0.7)',
   },
   logoBarVertical: {
     position: 'absolute',
@@ -412,6 +494,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.text,
+    fontFamily: type.data,
     fontWeight: '800',
   },
   subtitle: {
@@ -426,12 +509,13 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   stepCard: {
-    borderColor: colors.border,
+    borderColor: colors.line,
     borderRadius: radius.xl,
     borderWidth: 1,
     gap: spacing.md,
     padding: spacing.lg,
-    backgroundColor: colors.card,
+    backgroundColor: colors.glass,
+    ...glassShadow,
   },
   stepEyebrow: {
     color: colors.orange,
@@ -463,6 +547,10 @@ const styles = StyleSheet.create({
   warning: {
     color: colors.orange,
   },
+  success: {
+    color: colors.green,
+    fontWeight: '700',
+  },
   goalPreview: {
     borderColor: colors.border,
     borderRadius: radius.lg,
@@ -473,6 +561,7 @@ const styles = StyleSheet.create({
   },
   goalText: {
     color: colors.cyan,
+    fontFamily: type.data,
     fontWeight: '800',
     textAlign: 'center',
   },

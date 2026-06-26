@@ -3,7 +3,7 @@ import { Card, Text } from 'react-native-paper';
 
 import { formatHydrationAmount, type HydrationUnit } from '@/src/features/hydration/units';
 import type { HydrationCheckpoint } from '@/src/features/hydration/types';
-import { colors, radius, spacing } from '@/src/theme/tokens';
+import { colors, glassShadow, radius, spacing, type } from '@/src/theme/tokens';
 
 type TimelineStatus = 'Completed' | 'Missed' | 'Upcoming';
 
@@ -22,7 +22,7 @@ export function HydrationTimeline({ checkpoints, consumedMl, unit }: HydrationTi
       <Card.Content style={styles.content}>
         <View style={styles.headerRow}>
           <View style={styles.titleRow}>
-            <Text style={styles.icon}>▣</Text>
+            <View style={styles.icon} />
             <Text style={styles.title} variant="titleLarge">
               Today Timeline
             </Text>
@@ -73,7 +73,8 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: radius.lg,
     borderWidth: 1,
-    backgroundColor: colors.card,
+    backgroundColor: colors.glass,
+    ...glassShadow,
   },
   content: {
     gap: spacing.md,
@@ -89,8 +90,12 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   icon: {
-    color: colors.cyan,
-    fontSize: 20,
+    width: 18,
+    height: 18,
+    borderColor: colors.cyan,
+    borderRadius: 4,
+    borderWidth: 2,
+    backgroundColor: 'rgba(32, 199, 255, 0.16)',
   },
   title: {
     color: colors.text,
@@ -107,9 +112,11 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   dot: {
-    width: 14,
-    height: 14,
+    width: 13,
+    height: 13,
     borderRadius: 7,
+    borderColor: colors.ink,
+    borderWidth: 2,
   },
   Completed: {
     backgroundColor: colors.green,
@@ -122,7 +129,7 @@ const styles = StyleSheet.create({
   },
   timeColumn: {
     flex: 1,
-    borderLeftColor: colors.border,
+    borderLeftColor: colors.line,
     borderLeftWidth: 1,
     paddingLeft: spacing.md,
   },
@@ -134,6 +141,7 @@ const styles = StyleSheet.create({
   },
   line: {
     color: colors.text,
+    fontFamily: type.data,
     fontWeight: '700',
   },
   status: {

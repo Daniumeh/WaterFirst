@@ -14,7 +14,7 @@ import { formatHydrationAmount } from '@/src/features/hydration/units';
 import type { HydrationCheckpoint } from '@/src/features/hydration/types';
 import { useHydrationStore } from '@/src/store/hydrationStore';
 import { useProfileStore } from '@/src/store/profileStore';
-import { colors, spacing } from '@/src/theme/tokens';
+import { colors, glassShadow, radius, spacing, type } from '@/src/theme/tokens';
 
 export default function DashboardScreen() {
   const profile = useProfileStore((state) => state.profile);
@@ -35,23 +35,26 @@ export default function DashboardScreen() {
     () => buildHealthInsights(progress.percentComplete, complianceScore, logs.length),
     [complianceScore, logs.length, progress.percentComplete],
   );
+  const firstName = profile.firstName || 'Hydra';
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.topGlow} />
+      <View style={styles.reservoirBand} />
+      <View style={styles.waterline} />
       <View style={styles.statusBar}>
         <Text style={styles.timeText}>9:41</Text>
         <Text style={styles.signalText}>▮▮▮ ᯤ ▱</Text>
       </View>
       <View style={styles.header}>
         <View>
+          <Text style={styles.greeting}>Daily reservoir for {firstName}</Text>
           <Text style={styles.brand} variant="headlineSmall">
             Hydra<Text style={styles.brandAccent}>Lock</Text>
           </Text>
           <Text style={styles.subtitle}>Stay hydrated. Stay unstoppable.</Text>
         </View>
         <View style={styles.bellWrap}>
-          <Text style={styles.bell}>♧</Text>
+          <View style={styles.bell} />
           <View style={styles.bellDot} />
         </View>
       </View>
@@ -162,15 +165,21 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
     backgroundColor: colors.ink,
   },
-  topGlow: {
+  reservoirBand: {
     position: 'absolute',
-    right: -110,
-    top: -140,
-    width: 320,
-    height: 320,
-    borderRadius: 160,
-    backgroundColor: '#075887',
-    opacity: 0.42,
+    left: 0,
+    right: 0,
+    top: 128,
+    height: 104,
+    backgroundColor: 'rgba(20, 125, 255, 0.12)',
+  },
+  waterline: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    top: 100,
+    height: 1,
+    backgroundColor: colors.line,
   },
   statusBar: {
     alignItems: 'center',
@@ -181,20 +190,34 @@ const styles = StyleSheet.create({
   },
   timeText: {
     color: colors.text,
+    fontFamily: type.data,
     fontSize: 18,
     fontWeight: '900',
   },
   signalText: {
     color: colors.text,
+    fontFamily: type.data,
     fontSize: 16,
     fontWeight: '900',
   },
   header: {
     alignItems: 'center',
+    borderColor: colors.line,
+    borderRadius: radius.lg,
+    borderWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
+    backgroundColor: 'rgba(3, 16, 28, 0.62)',
+    ...glassShadow,
+  },
+  greeting: {
+    color: colors.cyanSoft,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0,
+    textTransform: 'uppercase',
   },
   brand: {
     color: colors.text,
@@ -212,10 +235,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 42,
     height: 42,
+    borderColor: colors.line,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    backgroundColor: colors.glass,
   },
   bell: {
-    color: colors.muted,
-    fontSize: 28,
+    width: 17,
+    height: 21,
+    borderColor: colors.muted,
+    borderRadius: 7,
+    borderWidth: 2,
+    borderBottomWidth: 3,
   },
   bellDot: {
     position: 'absolute',
@@ -232,10 +263,11 @@ const styles = StyleSheet.create({
   },
   statsStrip: {
     borderColor: colors.border,
-    borderRadius: 22,
+    borderRadius: radius.lg,
     borderWidth: 1,
     flexDirection: 'row',
     overflow: 'hidden',
-    backgroundColor: colors.card,
+    backgroundColor: colors.glass,
+    ...glassShadow,
   },
 });

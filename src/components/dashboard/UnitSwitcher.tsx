@@ -2,7 +2,7 @@ import { Pressable, StyleSheet } from 'react-native';
 import { Text } from 'react-native-paper';
 
 import type { HydrationUnit } from '@/src/features/hydration/units';
-import { colors, radius } from '@/src/theme/tokens';
+import { colors, radius, type } from '@/src/theme/tokens';
 
 type UnitSwitcherProps = {
   unit: HydrationUnit;
@@ -30,11 +30,12 @@ const styles = StyleSheet.create({
     gap: 8,
     minHeight: 42,
     paddingHorizontal: 14,
-    backgroundColor: colors.panel,
+    backgroundColor: 'rgba(3, 16, 28, 0.58)',
     borderRadius: radius.md,
   },
   label: {
     color: colors.text,
+    fontFamily: type.data,
     fontSize: 14,
     fontWeight: '700',
   },

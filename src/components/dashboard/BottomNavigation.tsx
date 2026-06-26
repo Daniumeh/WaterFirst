@@ -1,11 +1,11 @@
 import { colors } from '@/src/theme/tokens';
 
 export const bottomNavigationStyle = {
-  backgroundColor: '#071827',
-  borderColor: '#14344A',
-  borderTopColor: '#14344A',
+  backgroundColor: colors.midnight,
+  borderColor: colors.border,
+  borderTopColor: colors.border,
   borderWidth: 1,
-  height: 82,
+  height: 86,
   paddingBottom: 12,
   paddingTop: 10,
 };

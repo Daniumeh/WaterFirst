@@ -3,7 +3,7 @@ import { Card, Text } from 'react-native-paper';
 
 import { formatHydrationAmount, type HydrationUnit } from '@/src/features/hydration/units';
 import type { HydrationCheckpoint } from '@/src/features/hydration/types';
-import { colors, radius, spacing } from '@/src/theme/tokens';
+import { colors, glassShadow, radius, spacing, type } from '@/src/theme/tokens';
 
 type HydrationActionCardProps = {
   checkpoint: HydrationCheckpoint | null;
@@ -24,7 +24,7 @@ export function HydrationActionCard({ checkpoint, consumedMl, unit }: HydrationA
     <Card mode="contained" style={[styles.card, isMissed && styles.missedCard]}>
       <Card.Content style={styles.content}>
         <View style={styles.titleRow}>
-          <Text style={styles.icon}>◷</Text>
+          <View style={styles.icon} />
           <Text style={styles.kicker}>{isMissed ? 'Missed Hydration' : 'Next Hydration'}</Text>
         </View>
         {checkpoint ? (
@@ -38,7 +38,7 @@ export function HydrationActionCard({ checkpoint, consumedMl, unit }: HydrationA
                 />
               </View>
               <View style={styles.dropRing}>
-                <Text style={styles.drop}>♢</Text>
+                <View style={styles.drop} />
               </View>
             </View>
             <Text style={styles.message}>
@@ -77,11 +77,12 @@ const styles = StyleSheet.create({
     borderColor: colors.cyan,
     borderRadius: radius.lg,
     borderWidth: 1,
-    backgroundColor: '#06243A',
+    backgroundColor: colors.glass,
+    ...glassShadow,
   },
   missedCard: {
     borderColor: colors.orange,
-    backgroundColor: '#261C18',
+    backgroundColor: 'rgba(55, 31, 19, 0.92)',
   },
   content: {
     gap: spacing.md,
@@ -92,8 +93,12 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   icon: {
-    color: colors.cyan,
-    fontSize: 22,
+    width: 18,
+    height: 18,
+    borderColor: colors.cyan,
+    borderRadius: 9,
+    borderWidth: 2,
+    borderLeftColor: 'transparent',
   },
   kicker: {
     color: colors.text,
@@ -119,6 +124,7 @@ const styles = StyleSheet.create({
   },
   metricValue: {
     color: colors.text,
+    fontFamily: type.data,
     fontSize: 20,
     fontWeight: '900',
   },
@@ -127,23 +133,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 88,
     height: 88,
-    borderColor: colors.cyan,
+    borderColor: colors.line,
     borderRadius: 44,
     borderWidth: 6,
-    backgroundColor: colors.panel,
+    backgroundColor: 'rgba(3, 16, 28, 0.74)',
   },
   drop: {
-    color: colors.cyan,
-    fontSize: 40,
-    fontWeight: '900',
+    width: 28,
+    height: 40,
+    borderColor: colors.cyan,
+    borderRadius: 16,
+    borderWidth: 3,
+    backgroundColor: 'rgba(32, 199, 255, 0.22)',
   },
   message: {
-    borderColor: colors.border,
+    borderColor: colors.line,
     borderRadius: radius.md,
     borderWidth: 1,
     color: colors.muted,
     lineHeight: 21,
     padding: spacing.sm,
-    backgroundColor: colors.panel,
+    backgroundColor: 'rgba(3, 16, 28, 0.46)',
   },
 });

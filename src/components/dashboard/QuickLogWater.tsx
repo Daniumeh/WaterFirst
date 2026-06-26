@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Button, Card, Text, TextInput } from 'react-native-paper';
 
 import { unitToMl } from '@/src/features/hydration/units';
-import { colors, radius, spacing } from '@/src/theme/tokens';
+import { colors, glassShadow, radius, spacing, type } from '@/src/theme/tokens';
 
 type QuickLogWaterProps = {
   customAmount: string;
@@ -28,7 +28,7 @@ export function QuickLogWater({
       <Card.Content style={styles.content}>
         <View>
           <View style={styles.titleRow}>
-            <Text style={styles.waterIcon}>♦</Text>
+            <View style={styles.waterIcon} />
             <Text style={styles.title} variant="titleLarge">
               Quick Log Water
             </Text>
@@ -45,7 +45,7 @@ export function QuickLogWater({
               style={styles.quickButton}
               onPress={() => onLog(unitToMl(amountCl, 'cl'))}
             >
-              <Text style={styles.bottleIcon}>▯</Text>
+              <View style={styles.bottleIcon} />
               <Text style={styles.quickText}>+{amountCl}cl</Text>
             </Pressable>
           ))}
@@ -69,7 +69,7 @@ export function QuickLogWater({
               style={styles.optionButton}
               onPress={() => onLog(unitToMl(option.amountCl, 'cl'))}
             >
-              <Text style={styles.optionIcon}>{option.label === 'Sachet Water' ? '▱' : '▯'}</Text>
+              <View style={[styles.optionIcon, option.label === 'Sachet Water' && styles.sachetIcon]} />
               <View>
                 <Text style={styles.optionLabel}>{option.label}</Text>
                 <Text style={styles.optionAmount}>{option.amountCl}cl</Text>
@@ -111,10 +111,11 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: radius.lg,
     borderWidth: 1,
-    backgroundColor: colors.card,
+    backgroundColor: colors.glass,
+    ...glassShadow,
   },
   content: {
-    gap: spacing.sm,
+    gap: spacing.md,
   },
   titleRow: {
     alignItems: 'center',
@@ -122,8 +123,12 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   waterIcon: {
-    color: colors.cyan,
-    fontSize: 24,
+    width: 12,
+    height: 20,
+    borderColor: colors.cyan,
+    borderRadius: 7,
+    borderWidth: 2,
+    backgroundColor: 'rgba(32, 199, 255, 0.18)',
   },
   title: {
     flex: 1,
@@ -132,7 +137,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   more: {
-    color: colors.cyan,
+    color: colors.cyanSoft,
     fontSize: 13,
     fontWeight: '700',
   },
@@ -147,7 +152,7 @@ const styles = StyleSheet.create({
   quickButton: {
     alignItems: 'center',
     borderRadius: radius.md,
-    borderColor: colors.border,
+    borderColor: colors.line,
     borderWidth: 1,
     flexDirection: 'row',
     gap: spacing.xs,
@@ -156,14 +161,19 @@ const styles = StyleSheet.create({
     minWidth: 0,
     paddingHorizontal: spacing.sm,
     width: '31%',
-    backgroundColor: colors.cardRaised,
+    backgroundColor: colors.glassStrong,
   },
   bottleIcon: {
-    color: colors.cyan,
-    fontSize: 20,
+    width: 9,
+    height: 24,
+    borderColor: colors.cyan,
+    borderRadius: 4,
+    borderWidth: 2,
+    backgroundColor: 'rgba(20, 125, 255, 0.22)',
   },
   quickText: {
     color: colors.text,
+    fontFamily: type.data,
     fontSize: 17,
     fontWeight: '900',
   },
@@ -175,7 +185,7 @@ const styles = StyleSheet.create({
   divider: {
     flex: 1,
     height: 1,
-    backgroundColor: colors.border,
+    backgroundColor: colors.line,
   },
   optionGrid: {
     flexDirection: 'row',
@@ -184,7 +194,7 @@ const styles = StyleSheet.create({
   },
   optionButton: {
     alignItems: 'center',
-    borderColor: colors.border,
+    borderColor: colors.line,
     borderWidth: 1,
     borderRadius: radius.md,
     flexDirection: 'row',
@@ -192,11 +202,20 @@ const styles = StyleSheet.create({
     minHeight: 72,
     padding: spacing.sm,
     width: '48%',
-    backgroundColor: colors.cardRaised,
+    backgroundColor: colors.glassStrong,
   },
   optionIcon: {
-    color: colors.cyan,
-    fontSize: 32,
+    width: 16,
+    height: 34,
+    borderColor: colors.cyan,
+    borderRadius: 6,
+    borderWidth: 2,
+    backgroundColor: 'rgba(32, 199, 255, 0.15)',
+  },
+  sachetIcon: {
+    width: 23,
+    borderRadius: 4,
+    transform: [{ skewX: '-8deg' }],
   },
   optionLabel: {
     color: colors.text,
@@ -204,7 +223,8 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   optionAmount: {
-    color: colors.text,
+    color: colors.cyanSoft,
+    fontFamily: type.data,
     fontSize: 13,
     marginTop: 2,
   },
@@ -219,6 +239,6 @@ const styles = StyleSheet.create({
   },
   customButton: {
     borderRadius: radius.md,
-    backgroundColor: colors.cyanDeep,
+    backgroundColor: colors.blue,
   },
 });

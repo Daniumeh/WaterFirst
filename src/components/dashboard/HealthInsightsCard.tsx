@@ -1,7 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 import { Card, Text } from 'react-native-paper';
 
-import { colors, radius, spacing } from '@/src/theme/tokens';
+import { colors, glassShadow, radius, spacing } from '@/src/theme/tokens';
 
 type HealthInsightsCardProps = {
   insights: string[];
@@ -13,16 +13,16 @@ export function HealthInsightsCard({ insights }: HealthInsightsCardProps) {
       <Card.Content style={styles.content}>
         <View style={styles.headerRow}>
           <View style={styles.titleRow}>
-            <Text style={styles.icon}>⌁</Text>
+            <View style={styles.icon} />
             <Text style={styles.title} variant="titleLarge">
-              Health Insight
+              Habit Insight
             </Text>
           </View>
           <Text style={styles.link}>See All ›</Text>
         </View>
         <View style={styles.innerPanel}>
           <View style={styles.starBadge}>
-            <Text style={styles.star}>☆</Text>
+            <View style={styles.star} />
           </View>
           <View style={styles.insightList}>
             {insights.map((insight) => (
@@ -33,7 +33,7 @@ export function HealthInsightsCard({ insights }: HealthInsightsCardProps) {
             <Text style={styles.goodJob}>Great job! Small habits create big results.</Text>
           </View>
           <View style={styles.dropArt}>
-            <Text style={styles.drop}>◒</Text>
+            <View style={styles.drop} />
           </View>
         </View>
       </Card.Content>
@@ -46,7 +46,8 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: radius.lg,
     borderWidth: 1,
-    backgroundColor: colors.card,
+    backgroundColor: colors.glass,
+    ...glassShadow,
   },
   content: {
     gap: spacing.md,
@@ -62,8 +63,13 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   icon: {
-    color: colors.cyan,
-    fontSize: 22,
+    width: 21,
+    height: 12,
+    borderBottomColor: colors.cyan,
+    borderBottomWidth: 2,
+    borderLeftColor: colors.cyan,
+    borderLeftWidth: 2,
+    transform: [{ skewX: '-18deg' }],
   },
   title: {
     color: colors.text,
@@ -75,26 +81,30 @@ const styles = StyleSheet.create({
   },
   innerPanel: {
     alignItems: 'center',
-    borderColor: colors.border,
+    borderColor: colors.line,
     borderRadius: radius.lg,
     borderWidth: 1,
     flexDirection: 'row',
     gap: spacing.md,
     padding: spacing.md,
-    backgroundColor: colors.panel,
+    backgroundColor: 'rgba(3, 16, 28, 0.44)',
   },
   starBadge: {
     alignItems: 'center',
     justifyContent: 'center',
     width: 48,
     height: 48,
-    borderColor: '#FFE348',
-    borderRadius: 24,
+    borderColor: colors.orange,
+    borderRadius: 8,
     borderWidth: 2,
+    backgroundColor: 'rgba(255, 178, 87, 0.12)',
   },
   star: {
-    color: '#FFE348',
-    fontSize: 30,
+    width: 18,
+    height: 18,
+    borderColor: colors.orange,
+    borderRadius: 9,
+    borderWidth: 2,
   },
   insightList: {
     flex: 1,
@@ -115,11 +125,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 58,
     height: 58,
-    borderRadius: 29,
-    backgroundColor: '#083556',
+    borderColor: colors.line,
+    borderRadius: 8,
+    borderWidth: 1,
+    backgroundColor: 'rgba(20, 125, 255, 0.15)',
   },
   drop: {
-    color: colors.cyan,
-    fontSize: 42,
+    width: 26,
+    height: 36,
+    borderColor: colors.cyan,
+    borderRadius: 15,
+    borderWidth: 3,
+    backgroundColor: 'rgba(32, 199, 255, 0.2)',
   },
 });

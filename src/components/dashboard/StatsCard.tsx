@@ -1,7 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 
-import { colors, spacing } from '@/src/theme/tokens';
+import { colors, spacing, type } from '@/src/theme/tokens';
 
 type StatsCardProps = {
   label: string;
@@ -25,9 +25,9 @@ const styles = StyleSheet.create({
     minWidth: 0,
     alignItems: 'center',
     gap: spacing.xs,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.xs,
     paddingVertical: spacing.md,
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(8, 31, 49, 0.58)',
   },
   label: {
     color: colors.muted,
@@ -36,12 +36,14 @@ const styles = StyleSheet.create({
   },
   value: {
     color: colors.text,
+    fontFamily: type.data,
     fontSize: 21,
     fontWeight: '900',
     textAlign: 'center',
   },
   helper: {
     color: colors.cyanSoft,
+    fontFamily: type.data,
     fontSize: 12,
     fontWeight: '700',
   },

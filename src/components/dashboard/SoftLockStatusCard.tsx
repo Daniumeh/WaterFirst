@@ -1,7 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 import { Card, Text } from 'react-native-paper';
 
-import { colors, radius, spacing } from '@/src/theme/tokens';
+import { colors, glassShadow, radius, spacing, type } from '@/src/theme/tokens';
 
 type SoftLockStatusCardProps = {
   enabled: boolean;
@@ -19,12 +19,12 @@ export function SoftLockStatusCard({
       <Card.Content style={styles.content}>
         <View style={styles.headerRow}>
           <View style={styles.titleRow}>
-            <Text style={styles.icon}>⌾</Text>
+            <View style={styles.icon} />
             <Text style={styles.title} variant="titleLarge">
               Soft Lock
             </Text>
           </View>
-          <View style={styles.toggle}>
+          <View style={[styles.toggle, !enabled && styles.toggleOff]}>
             <View style={styles.toggleKnob} />
           </View>
         </View>
@@ -39,7 +39,10 @@ export function SoftLockStatusCard({
             <InfoBlock label="Compliance Score" value={`${complianceScore}%`} />
           </View>
           <View style={styles.shield}>
-            <Text style={styles.lock}>▣</Text>
+            <View style={styles.lockBody}>
+              <View style={styles.lockShackle} />
+              <View style={styles.lockPlate} />
+            </View>
           </View>
         </View>
       </Card.Content>
@@ -67,7 +70,8 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: radius.lg,
     borderWidth: 1,
-    backgroundColor: colors.card,
+    backgroundColor: colors.glass,
+    ...glassShadow,
   },
   content: {
     gap: spacing.md,
@@ -83,8 +87,12 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   icon: {
-    color: colors.cyan,
-    fontSize: 22,
+    width: 18,
+    height: 22,
+    borderColor: colors.cyan,
+    borderRadius: 7,
+    borderWidth: 2,
+    backgroundColor: 'rgba(32, 199, 255, 0.12)',
   },
   title: {
     color: colors.text,
@@ -98,6 +106,9 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     paddingHorizontal: 4,
     backgroundColor: colors.cyan,
+  },
+  toggleOff: {
+    backgroundColor: colors.border,
   },
   toggleKnob: {
     width: 22,
@@ -133,12 +144,13 @@ const styles = StyleSheet.create({
   },
   infoValue: {
     color: colors.cyan,
+    fontFamily: type.data,
     fontSize: 20,
     fontWeight: '900',
   },
   separator: {
     height: 1,
-    backgroundColor: colors.border,
+    backgroundColor: colors.line,
   },
   shield: {
     alignItems: 'center',
@@ -148,10 +160,28 @@ const styles = StyleSheet.create({
     borderColor: colors.cyanSoft,
     borderRadius: radius.lg,
     borderWidth: 2,
-    backgroundColor: '#0B2E52',
+    backgroundColor: 'rgba(20, 125, 255, 0.16)',
   },
-  lock: {
-    color: colors.cyan,
-    fontSize: 36,
+  lockBody: {
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    width: 38,
+    height: 44,
+  },
+  lockShackle: {
+    position: 'absolute',
+    top: 0,
+    width: 24,
+    height: 24,
+    borderColor: colors.cyanSoft,
+    borderRadius: 12,
+    borderWidth: 4,
+    borderBottomWidth: 0,
+  },
+  lockPlate: {
+    width: 34,
+    height: 27,
+    borderRadius: radius.sm,
+    backgroundColor: colors.blue,
   },
 });

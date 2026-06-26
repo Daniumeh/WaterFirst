@@ -4,7 +4,7 @@ import { colors } from './tokens';
 
 export const hydraLockTheme = {
   ...MD3DarkTheme,
-  roundness: 3,
+  roundness: 2,
   colors: {
     ...MD3DarkTheme.colors,
     primary: colors.cyan,
