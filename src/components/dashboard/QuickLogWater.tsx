@@ -120,6 +120,7 @@ const styles = StyleSheet.create({
   titleRow: {
     alignItems: 'center',
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
   },
   waterIcon: {
@@ -138,6 +139,7 @@ const styles = StyleSheet.create({
   },
   more: {
     color: colors.cyanSoft,
+    flexShrink: 0,
     fontSize: 13,
     fontWeight: '700',
   },
@@ -156,11 +158,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexDirection: 'row',
     gap: spacing.xs,
+    flexBasis: 92,
+    flexGrow: 1,
     justifyContent: 'center',
     minHeight: 52,
     minWidth: 0,
     paddingHorizontal: spacing.sm,
-    width: '31%',
     backgroundColor: colors.glassStrong,
   },
   bottleIcon: {
@@ -199,9 +202,11 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     flexDirection: 'row',
     gap: spacing.sm,
+    flexBasis: 136,
+    flexGrow: 1,
     minHeight: 72,
+    minWidth: 0,
     padding: spacing.sm,
-    width: '48%',
     backgroundColor: colors.glassStrong,
   },
   optionIcon: {
@@ -231,14 +236,19 @@ const styles = StyleSheet.create({
   customRow: {
     alignItems: 'center',
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
   },
   input: {
+    flexBasis: 180,
     flex: 1,
     backgroundColor: colors.panel,
   },
   customButton: {
     borderRadius: radius.md,
+    flexGrow: 1,
+    minHeight: 44,
+    minWidth: 88,
     backgroundColor: colors.blue,
   },
 });

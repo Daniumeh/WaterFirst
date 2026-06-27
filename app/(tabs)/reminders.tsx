@@ -11,7 +11,7 @@ export default function RemindersScreen() {
   const [permissionStatus, setPermissionStatus] = useState('Not requested');
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={styles.container} showsHorizontalScrollIndicator={false}>
       <Text style={styles.title} variant="headlineSmall">
         Reminders
       </Text>
@@ -118,6 +118,8 @@ const styles = StyleSheet.create({
   row: {
     alignItems: 'center',
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.md,
     justifyContent: 'space-between',
   },
   rowText: {
@@ -127,9 +129,11 @@ const styles = StyleSheet.create({
   },
   timeRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.md,
   },
   timeInput: {
+    flexBasis: 120,
     flex: 1,
   },
   input: {

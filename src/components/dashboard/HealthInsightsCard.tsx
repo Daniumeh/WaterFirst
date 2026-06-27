@@ -55,6 +55,8 @@ const styles = StyleSheet.create({
   headerRow: {
     alignItems: 'center',
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
     justifyContent: 'space-between',
   },
   titleRow: {
@@ -85,6 +87,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.md,
     padding: spacing.md,
     backgroundColor: 'rgba(3, 16, 28, 0.44)',
@@ -94,6 +97,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 48,
     height: 48,
+    flexShrink: 0,
     borderColor: colors.orange,
     borderRadius: 8,
     borderWidth: 2,
@@ -107,7 +111,9 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   insightList: {
+    flexBasis: 180,
     flex: 1,
+    minWidth: 0,
   },
   insight: {
     color: colors.text,
@@ -125,6 +131,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 58,
     height: 58,
+    flexShrink: 0,
     borderColor: colors.line,
     borderRadius: 8,
     borderWidth: 1,

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text } from 'react-native-paper';
 
 import { HealthInsightsCard } from '@/src/components/dashboard/HealthInsightsCard';
@@ -17,6 +17,7 @@ import { useProfileStore } from '@/src/store/profileStore';
 import { colors, glassShadow, radius, spacing, type } from '@/src/theme/tokens';
 
 export default function DashboardScreen() {
+  const { width } = useWindowDimensions();
   const profile = useProfileStore((state) => state.profile);
   const { checkpoints, goal, logWater, logs, progress } = useHydrationStore();
   const [unit, setUnit] = useState<HydrationUnit>('cl');
@@ -36,9 +37,16 @@ export default function DashboardScreen() {
     [complianceScore, logs.length, progress.percentComplete],
   );
   const firstName = profile.firstName || 'Hydra';
+  const isCompactPhone = Math.min(width, 430) <= 360;
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView
+      contentContainerStyle={[
+        styles.container,
+        isCompactPhone && styles.compactContainer,
+      ]}
+      showsHorizontalScrollIndicator={false}
+    >
       <View style={styles.reservoirBand} />
       <View style={styles.waterline} />
       <View style={styles.statusBar}>
@@ -72,7 +80,7 @@ export default function DashboardScreen() {
         onLog={logWater}
       />
 
-      <View style={styles.actionGrid}>
+      <View style={[styles.actionGrid, isCompactPhone && styles.actionGridCompact]}>
         <HydrationActionCard
           checkpoint={actionCheckpoint}
           consumedMl={progress.loggedMl}
@@ -164,6 +172,10 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     paddingBottom: 100,
     backgroundColor: colors.ink,
+  },
+  compactContainer: {
+    padding: spacing.sm,
+    paddingBottom: 96,
   },
   reservoirBand: {
     position: 'absolute',
@@ -259,7 +271,11 @@ const styles = StyleSheet.create({
   },
   actionGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.md,
+  },
+  actionGridCompact: {
+    gap: spacing.sm,
   },
   statsStrip: {
     borderColor: colors.border,

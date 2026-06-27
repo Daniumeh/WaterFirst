@@ -6,7 +6,7 @@ import { colors, shadow, spacing } from '@/src/theme/tokens';
 
 type KidneyProgressRingProps = {
   progress: number;
-  size?: 'hero' | 'mini';
+  size?: 'hero' | 'compactHero' | 'mini';
 };
 
 export function KidneyProgressRing({ progress, size = 'hero' }: KidneyProgressRingProps) {
@@ -37,9 +37,27 @@ export function KidneyProgressRing({ progress, size = 'hero' }: KidneyProgressRi
 
   return (
     <View style={styles.wrapper}>
-      <View style={[styles.ringOuter, size === 'mini' && styles.ringOuterMini]}>
-        <View style={[styles.ringInner, size === 'mini' && styles.ringInnerMini]}>
-          <View style={[styles.kidneyStage, size === 'mini' && styles.kidneyStageMini]}>
+      <View
+        style={[
+          styles.ringOuter,
+          size === 'compactHero' && styles.ringOuterCompact,
+          size === 'mini' && styles.ringOuterMini,
+        ]}
+      >
+        <View
+          style={[
+            styles.ringInner,
+            size === 'compactHero' && styles.ringInnerCompact,
+            size === 'mini' && styles.ringInnerMini,
+          ]}
+        >
+          <View
+            style={[
+              styles.kidneyStage,
+              size === 'compactHero' && styles.kidneyStageCompact,
+              size === 'mini' && styles.kidneyStageMini,
+            ]}
+          >
             <View style={styles.ureterLeft} />
             <View style={styles.ureterRight} />
             <View style={styles.ureterStemLeft} />
@@ -95,6 +113,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#041423',
     ...shadow,
   },
+  ringOuterCompact: {
+    width: 166,
+    height: 166,
+    borderRadius: 83,
+    borderWidth: 9,
+  },
   ringOuterMini: {
     width: 100,
     height: 100,
@@ -111,6 +135,11 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: '#061524',
   },
+  ringInnerCompact: {
+    width: 132,
+    height: 132,
+    borderRadius: 66,
+  },
   ringInnerMini: {
     width: 74,
     height: 74,
@@ -123,6 +152,9 @@ const styles = StyleSheet.create({
     height: 100,
     justifyContent: 'center',
     width: 126,
+  },
+  kidneyStageCompact: {
+    transform: [{ scale: 0.86 }],
   },
   kidneyStageMini: {
     width: 56,

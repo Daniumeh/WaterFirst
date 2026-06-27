@@ -7,6 +7,7 @@ import { Provider as PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
+import { AppScreen } from '@/src/components/layout/AppScreen';
 import { AuthProvider } from '@/src/features/auth/AuthProvider';
 import { hydraLockTheme } from '@/src/theme/paperTheme';
 
@@ -53,14 +54,16 @@ function RootLayoutNav() {
       <QueryClientProvider client={queryClient}>
         <PaperProvider theme={hydraLockTheme}>
           <AuthProvider>
-            <Stack>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-              <Stack.Screen
-                name="soft-lock"
-                options={{ title: 'HydraLock', presentation: 'modal' }}
-              />
-            </Stack>
+            <AppScreen>
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+                <Stack.Screen
+                  name="soft-lock"
+                  options={{ title: 'HydraLock', presentation: 'modal' }}
+                />
+              </Stack>
+            </AppScreen>
           </AuthProvider>
         </PaperProvider>
       </QueryClientProvider>

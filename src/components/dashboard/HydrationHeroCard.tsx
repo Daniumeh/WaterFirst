@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Card, Text } from 'react-native-paper';
 
 import { formatHydrationAmount, type HydrationUnit } from '@/src/features/hydration/units';
@@ -20,16 +20,18 @@ export function HydrationHeroCard({
   unit,
   onUnitChange,
 }: HydrationHeroCardProps) {
+  const { width } = useWindowDimensions();
   const progress = Math.min(consumedMl / Math.max(targetMl, 1), 1);
   const percentComplete = Math.round(progress * 100);
   const isFull = percentComplete >= 100;
+  const isCompactPhone = Math.min(width, 430) <= 360;
 
   return (
     <Card mode="contained" style={styles.card}>
       <View style={styles.capsuleRail} />
       <View style={styles.capsuleWash} />
       <Card.Content style={styles.content}>
-        <View style={styles.topRow}>
+        <View style={[styles.topRow, isCompactPhone && styles.topRowCompact]}>
           <View style={styles.progressLabelRow}>
             <View style={styles.dropIcon} />
             <View>
@@ -40,8 +42,8 @@ export function HydrationHeroCard({
           <UnitSwitcher unit={unit} onChange={onUnitChange} />
         </View>
 
-        <View style={styles.heroRow}>
-          <View style={styles.metricColumn}>
+        <View style={[styles.heroRow, isCompactPhone && styles.heroRowCompact]}>
+          <View style={[styles.metricColumn, isCompactPhone && styles.metricColumnCompact]}>
             <Text style={styles.percent} variant="displayMedium">
               {percentComplete}
               <Text style={styles.percentSymbol}>%</Text>
@@ -58,8 +60,8 @@ export function HydrationHeroCard({
             </View>
           </View>
 
-          <View style={styles.ringColumn}>
-            <KidneyProgressRing progress={progress} />
+          <View style={[styles.ringColumn, isCompactPhone && styles.ringColumnCompact]}>
+            <KidneyProgressRing progress={progress} size={isCompactPhone ? 'compactHero' : 'hero'} />
             <View style={styles.meterTicks}>
               <View style={[styles.tick, percentComplete > 0 && styles.tickActive]} />
               <View style={[styles.tick, percentComplete >= 50 && styles.tickActive]} />
@@ -113,7 +115,12 @@ const styles = StyleSheet.create({
   topRow: {
     alignItems: 'center',
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
     justifyContent: 'space-between',
+  },
+  topRowCompact: {
+    alignItems: 'flex-start',
   },
   progressLabelRow: {
     alignItems: 'center',
@@ -133,6 +140,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.sm,
   },
+  heroRowCompact: {
+    alignItems: 'stretch',
+    flexBasis: 'auto',
+    flexDirection: 'column',
+    flexGrow: 0,
+    flexShrink: 0,
+  },
   title: {
     color: colors.text,
     fontSize: 18,
@@ -148,6 +162,11 @@ const styles = StyleSheet.create({
   metricColumn: {
     flex: 0.9,
     gap: spacing.xs,
+  },
+  metricColumnCompact: {
+    flexBasis: 'auto',
+    flexGrow: 0,
+    flexShrink: 0,
   },
   percent: {
     color: colors.text,
@@ -205,6 +224,11 @@ const styles = StyleSheet.create({
   ringColumn: {
     alignItems: 'center',
     flex: 1.22,
+  },
+  ringColumnCompact: {
+    flexBasis: 'auto',
+    flexGrow: 0,
+    flexShrink: 0,
   },
   remainingText: {
     color: colors.muted,

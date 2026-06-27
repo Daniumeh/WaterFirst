@@ -82,11 +82,15 @@ const styles = StyleSheet.create({
   headerRow: {
     alignItems: 'center',
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
     justifyContent: 'space-between',
   },
   titleRow: {
     alignItems: 'center',
     flexDirection: 'row',
+    flexShrink: 1,
+    flexWrap: 'wrap',
     gap: spacing.sm,
   },
   icon: {
@@ -109,7 +113,7 @@ const styles = StyleSheet.create({
   row: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   dot: {
     width: 13,
@@ -129,15 +133,18 @@ const styles = StyleSheet.create({
   },
   timeColumn: {
     flex: 1,
+    minWidth: 72,
     borderLeftColor: colors.line,
     borderLeftWidth: 1,
-    paddingLeft: spacing.md,
+    paddingLeft: spacing.sm,
   },
   amountColumn: {
-    width: 74,
+    flexBasis: 56,
+    flexShrink: 1,
   },
   statusColumn: {
-    width: 86,
+    flexBasis: 76,
+    flexShrink: 1,
   },
   line: {
     color: colors.text,

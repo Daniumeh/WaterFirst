@@ -77,6 +77,7 @@ const styles = StyleSheet.create({
     borderColor: colors.cyan,
     borderRadius: radius.lg,
     borderWidth: 1,
+    minWidth: 180,
     backgroundColor: colors.glass,
     ...glassShadow,
   },
@@ -90,6 +91,7 @@ const styles = StyleSheet.create({
   titleRow: {
     alignItems: 'center',
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
   },
   icon: {
@@ -108,6 +110,7 @@ const styles = StyleSheet.create({
   cardBody: {
     alignItems: 'center',
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.md,
   },
   metricColumn: {
@@ -133,6 +136,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 88,
     height: 88,
+    flexShrink: 0,
     borderColor: colors.line,
     borderRadius: 44,
     borderWidth: 6,

@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "design-engineer": {
+      "source": "darasoba/design-engineer-plugin",
+      "sourceType": "github",
+      "skillPath": "skills/design-engineer/SKILL.md",
+      "computedHash": "6521c3bf0d45c758d45b8b018e32559e2f5140f0ac903381d9acbd12b014eb18"
+    },
     "find-skills": {
       "source": "vercel-labs/skills",
       "sourceType": "github",

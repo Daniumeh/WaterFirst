@@ -70,6 +70,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: radius.lg,
     borderWidth: 1,
+    minWidth: 180,
     backgroundColor: colors.glass,
     ...glassShadow,
   },
@@ -79,11 +80,15 @@ const styles = StyleSheet.create({
   headerRow: {
     alignItems: 'center',
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
     justifyContent: 'space-between',
   },
   titleRow: {
     alignItems: 'center',
     flexDirection: 'row',
+    flexShrink: 1,
+    flexWrap: 'wrap',
     gap: spacing.sm,
   },
   icon: {
@@ -128,6 +133,7 @@ const styles = StyleSheet.create({
   bodyRow: {
     alignItems: 'center',
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.md,
   },
   metricStack: {
@@ -157,6 +163,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 72,
     height: 84,
+    flexShrink: 0,
     borderColor: colors.cyanSoft,
     borderRadius: radius.lg,
     borderWidth: 2,

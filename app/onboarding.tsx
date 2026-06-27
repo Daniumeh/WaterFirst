@@ -172,7 +172,7 @@ export default function OnboardingScreen() {
     >
       <View style={styles.reservoirBand} />
       <View style={styles.waterline} />
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView contentContainerStyle={styles.container} showsHorizontalScrollIndicator={false}>
         <View style={styles.headerCard}>
           <View style={styles.logoMark}>
             <View style={styles.logoBarVertical} />
@@ -567,9 +567,11 @@ const styles = StyleSheet.create({
   },
   timeRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.md,
   },
   timeInput: {
+    flexBasis: 120,
     flex: 1,
   },
   consentRow: {
@@ -592,17 +594,20 @@ const styles = StyleSheet.create({
   },
   actions: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.md,
   },
   secondaryButton: {
     borderColor: colors.border,
     borderRadius: radius.md,
     flex: 1,
+    minWidth: 92,
   },
   primaryButton: {
     borderRadius: radius.md,
     backgroundColor: colors.cyan,
     flex: 2,
+    minWidth: 170,
   },
   buttonContent: {
     minHeight: 52,
