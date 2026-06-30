@@ -9,6 +9,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { AppScreen } from '@/src/components/layout/AppScreen';
 import { AuthProvider } from '@/src/features/auth/AuthProvider';
+import { configureNotificationPresentation } from '@/src/features/reminders/reminderService';
 import { hydraLockTheme } from '@/src/theme/paperTheme';
 
 export {
@@ -24,6 +25,8 @@ export const unstable_settings = {
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
+
+configureNotificationPresentation();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -59,6 +62,8 @@ function RootLayoutNav() {
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                 <Stack.Screen name="onboarding" options={{ headerShown: false }} />
                 <Stack.Screen name="sign-in" options={{ headerShown: false }} />
+                <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
+                <Stack.Screen name="reset-password" options={{ headerShown: false }} />
                 <Stack.Screen
                   name="soft-lock"
                   options={{ title: 'HydraLock', presentation: 'modal' }}

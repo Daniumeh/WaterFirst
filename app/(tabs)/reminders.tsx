@@ -3,13 +3,95 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Card, Switch, Text, TextInput } from 'react-native-paper';
 
 import { addLocalMinutes, getDeviceNow } from '@/src/features/hydration/deviceTime';
-import { requestReminderPermissions } from '@/src/features/reminders/reminderService';
+import { generateCheckpoints } from '@/src/features/hydration/hydrationMath';
+import {
+  cancelReminderNotifications,
+  requestReminderPermissions,
+  scheduleCheckpointReminders,
+} from '@/src/features/reminders/reminderService';
+import { useHydrationStore } from '@/src/store/hydrationStore';
 import { useReminderStore } from '@/src/store/reminderStore';
 import { colors, radius, spacing } from '@/src/theme/tokens';
 
 export default function RemindersScreen() {
-  const { settings, updateSettings, pauseUntil } = useReminderStore();
-  const [permissionStatus, setPermissionStatus] = useState('Not requested');
+  const { goal, checkpoints, setCheckpoints } = useHydrationStore();
+  const {
+    permissionMessage,
+    permissionStatus,
+    scheduledNotificationIds,
+    setPermissionState,
+    setScheduledNotificationIds,
+    settings,
+    updateSettings,
+    pauseUntil,
+  } = useReminderStore();
+  const [isScheduling, setIsScheduling] = useState(false);
+
+  const handleReminderToggle = async (enabled: boolean) => {
+    setIsScheduling(true);
+
+    try {
+      if (!enabled) {
+        await cancelReminderNotifications(scheduledNotificationIds);
+        setScheduledNotificationIds([]);
+        updateSettings({ enabled: false });
+        setPermissionState(permissionStatus, 'Hydration reminders are turned off.');
+        return;
+      }
+
+      const scheduledReminders = await scheduleCheckpointReminders({
+        checkpoints,
+        enabled: true,
+        existingNotificationIds: scheduledNotificationIds,
+      });
+
+      updateSettings({ enabled: true });
+      setPermissionState('granted');
+      setScheduledNotificationIds(scheduledReminders.map((reminder) => reminder.notificationId));
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Hydration reminders need notification access. You can enable notifications in your device settings and try again.';
+      updateSettings({ enabled: false });
+      setPermissionState('denied', message);
+      setScheduledNotificationIds([]);
+    } finally {
+      setIsScheduling(false);
+    }
+  };
+
+  const applyScheduleChanges = async () => {
+    const nextCheckpoints = generateCheckpoints(goal.targetMl, settings.activeStart, settings.activeEnd);
+
+    setCheckpoints(nextCheckpoints);
+
+    if (!settings.enabled) {
+      return;
+    }
+
+    setIsScheduling(true);
+
+    try {
+      const scheduledReminders = await scheduleCheckpointReminders({
+        checkpoints: nextCheckpoints,
+        enabled: true,
+        existingNotificationIds: scheduledNotificationIds,
+      });
+      setPermissionState('granted');
+      setScheduledNotificationIds(scheduledReminders.map((reminder) => reminder.notificationId));
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Hydration reminders need notification access. You can enable notifications in your device settings and try again.';
+      updateSettings({ enabled: false });
+      setPermissionState('denied', message);
+      setScheduledNotificationIds([]);
+    } finally {
+      setIsScheduling(false);
+    }
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container} showsHorizontalScrollIndicator={false}>
@@ -29,8 +111,9 @@ export default function RemindersScreen() {
               </Text>
             </View>
             <Switch
+              disabled={isScheduling}
               value={settings.enabled}
-              onValueChange={(enabled) => updateSettings({ enabled })}
+              onValueChange={(enabled) => void handleReminderToggle(enabled)}
             />
           </View>
           <View style={styles.timeRow}>
@@ -40,6 +123,7 @@ export default function RemindersScreen() {
               style={[styles.input, styles.timeInput]}
               value={settings.activeStart}
               onChangeText={(activeStart) => updateSettings({ activeStart })}
+              onEndEditing={() => void applyScheduleChanges()}
             />
             <TextInput
               label="End"
@@ -47,8 +131,18 @@ export default function RemindersScreen() {
               style={[styles.input, styles.timeInput]}
               value={settings.activeEnd}
               onChangeText={(activeEnd) => updateSettings({ activeEnd })}
+              onEndEditing={() => void applyScheduleChanges()}
             />
           </View>
+          <Button
+            mode="contained-tonal"
+            loading={isScheduling}
+            disabled={isScheduling}
+            style={styles.secondaryButton}
+            onPress={() => void applyScheduleChanges()}
+          >
+            Apply reminder schedule
+          </Button>
           <TextInput
             keyboardType="numeric"
             label="Snooze minutes"
@@ -66,12 +160,24 @@ export default function RemindersScreen() {
             Notification permission
           </Text>
           <Text style={styles.subtitle}>{permissionStatus}</Text>
+          {permissionMessage ? <Text style={styles.permissionMessage}>{permissionMessage}</Text> : null}
+          <Text style={styles.subtitle}>
+            {scheduledNotificationIds.length} recurring local reminder
+            {scheduledNotificationIds.length === 1 ? '' : 's'} scheduled.
+          </Text>
           <Button
             mode="contained-tonal"
             style={styles.secondaryButton}
             onPress={async () => {
               const result = await requestReminderPermissions();
-              setPermissionStatus(result.status);
+              if (result.granted) {
+                setPermissionState(result.status);
+              } else {
+                setPermissionState(
+                  result.status,
+                  'Hydration reminders need notification access. You can enable notifications in your device settings and try again.',
+                );
+              }
             }}
           >
             Check Permission
@@ -115,6 +221,10 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     color: colors.muted,
+  },
+  permissionMessage: {
+    color: colors.orange,
+    lineHeight: 21,
   },
   row: {
     alignItems: 'center',

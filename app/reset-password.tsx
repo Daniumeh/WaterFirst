@@ -1,45 +1,37 @@
-import { Redirect, router } from 'expo-router';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Text, TextInput } from 'react-native-paper';
 
-import { buildProfileFromUser, signInWithEmail } from '@/src/features/auth/authService';
+import { updatePassword } from '@/src/features/auth/authService';
 import { hasSupabaseConfig } from '@/src/lib/supabase';
-import { useProfileStore } from '@/src/store/profileStore';
 import { colors, glassShadow, radius, spacing, type } from '@/src/theme/tokens';
 
-export default function SignInScreen() {
-  const profile = useProfileStore((state) => state.profile);
-  const completeOnboarding = useProfileStore((state) => state.completeOnboarding);
-  const [email, setEmail] = useState(profile.email);
+export default function ResetPasswordScreen() {
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  if (profile.onboardingComplete) {
-    return <Redirect href="/(tabs)" />;
-  }
+  const passwordIsLongEnough = password.length >= 8;
+  const passwordsMatch = password === confirmPassword;
+  const canSubmit = passwordIsLongEnough && passwordsMatch && hasSupabaseConfig;
 
-  const canSubmit = /^\S+@\S+\.\S+$/.test(email.trim()) && password.length >= 8 && hasSupabaseConfig;
-
-  const handleSignIn = async () => {
+  const handleUpdatePassword = async () => {
     setIsSubmitting(true);
-    setAuthError(null);
+    setMessage(null);
+    setErrorMessage(null);
 
     try {
-      const result = await signInWithEmail({
-        email: email.trim().toLowerCase(),
-        password,
-      });
-
-      if (!result.session?.user) {
-        throw new Error('Could not start a session. Check your email confirmation status.');
-      }
-
-      completeOnboarding(buildProfileFromUser(result.session.user));
-      router.replace('/(tabs)');
+      await updatePassword(password);
+      setMessage('Password updated. You can continue to your HydraLock dashboard.');
     } catch (error) {
-      setAuthError(error instanceof Error ? error.message : 'Could not sign in.');
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : 'Could not update your password. Open the latest reset link and try again.',
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -60,78 +52,70 @@ export default function SignInScreen() {
             <View style={styles.logoDot} />
           </View>
           <Text style={styles.kicker} variant="labelLarge">
-            Welcome back
+            Secure reset
           </Text>
           <Text style={styles.title} variant="displaySmall">
-            Sign in
+            Create new password
           </Text>
           <Text style={styles.subtitle} variant="bodyLarge">
-            Continue your hydration accountability plan.
+            Choose a fresh password to get back to your hydration plan.
           </Text>
         </View>
 
         <View style={styles.card}>
           <Text style={styles.cardTitle} variant="headlineSmall">
-            HydraLock account
+            New password
           </Text>
-          <Text style={styles.cardHelper}>Use the email and password from your sign-up flow.</Text>
+          <Text style={styles.cardHelper}>
+            This screen works after opening the reset link from your email. Use at least 8
+            characters.
+          </Text>
 
           <View style={styles.fieldStack}>
             <TextInput
-              autoCapitalize="none"
-              keyboardType="email-address"
-              label="Email"
-              mode="outlined"
-              style={styles.input}
-              value={email}
-              onChangeText={setEmail}
-            />
-            <TextInput
-              label="Password"
+              label="New password"
               mode="outlined"
               secureTextEntry
               style={styles.input}
               value={password}
               onChangeText={setPassword}
             />
+            <TextInput
+              label="Confirm password"
+              mode="outlined"
+              secureTextEntry
+              style={styles.input}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+            />
           </View>
 
-          {!hasSupabaseConfig ? (
-            <Text style={styles.warning}>Supabase credentials are required before sign-in can work.</Text>
+          {password.length > 0 && !passwordIsLongEnough ? (
+            <Text style={styles.warning}>Password must be at least 8 characters.</Text>
           ) : null}
-          {authError ? <Text style={styles.warning}>{authError}</Text> : null}
+          {confirmPassword.length > 0 && !passwordsMatch ? (
+            <Text style={styles.warning}>Passwords do not match yet.</Text>
+          ) : null}
+          {!hasSupabaseConfig ? (
+            <Text style={styles.warning}>Supabase credentials are required before password reset can work.</Text>
+          ) : null}
+          {errorMessage ? <Text style={styles.warning}>{errorMessage}</Text> : null}
+          {message ? <Text style={styles.success}>{message}</Text> : null}
 
           <Button
+            contentStyle={styles.buttonContent}
             disabled={!canSubmit || isSubmitting}
             loading={isSubmitting}
             mode="contained"
-            onPress={() => void handleSignIn()}
+            onPress={() => void handleUpdatePassword()}
             style={styles.primaryButton}
-            contentStyle={styles.buttonContent}
           >
-            Sign in
+            Update password
           </Button>
 
-          <View style={styles.linkRow}>
-            <Button
-              compact
-              mode="text"
-              textColor={colors.cyanSoft}
-              onPress={() => router.push('./forgot-password')}
-              style={styles.linkButton}
-            >
-              Forgot password?
-            </Button>
-            <Button
-              compact
-              mode="text"
-              textColor={colors.cyanSoft}
-              onPress={() => router.replace('/onboarding')}
-              style={styles.linkButton}
-            >
-              Create account
-            </Button>
-          </View>
+          <Button mode="text" textColor={colors.cyanSoft} onPress={() => router.replace('/(tabs)')}>
+            Continue to dashboard
+          </Button>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -218,6 +202,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontFamily: type.data,
     fontWeight: '800',
+    textAlign: 'center',
   },
   subtitle: {
     color: colors.muted,
@@ -249,22 +234,15 @@ const styles = StyleSheet.create({
   warning: {
     color: colors.orange,
   },
+  success: {
+    color: colors.green,
+    lineHeight: 21,
+  },
   primaryButton: {
     borderRadius: radius.md,
     backgroundColor: colors.cyan,
   },
   buttonContent: {
     minHeight: 52,
-  },
-  linkRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.md,
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.xs,
-    paddingTop: spacing.xs,
-  },
-  linkButton: {
-    flexShrink: 1,
   },
 });

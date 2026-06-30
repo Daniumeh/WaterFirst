@@ -1,6 +1,7 @@
 import { useEffect, type PropsWithChildren } from 'react';
+import * as Linking from 'expo-linking';
 
-import { buildProfileFromUser } from '@/src/features/auth/authService';
+import { buildProfileFromUser, hydrateSessionFromAuthRedirect } from '@/src/features/auth/authService';
 import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/store/authStore';
 import { useProfileStore } from '@/src/store/profileStore';
@@ -52,8 +53,29 @@ export function AuthProvider({ children }: PropsWithChildren) {
       }
     });
 
+    Linking.getInitialURL()
+      .then((url) => {
+        if (!url || !isMounted) {
+          return;
+        }
+
+        return hydrateSessionFromAuthRedirect(url);
+      })
+      .catch((error: Error) => {
+        if (isMounted) {
+          setAuthError(error.message);
+        }
+      });
+
+    const linkingSubscription = Linking.addEventListener('url', ({ url }) => {
+      void hydrateSessionFromAuthRedirect(url).catch((error: Error) => {
+        setAuthError(error.message);
+      });
+    });
+
     return () => {
       isMounted = false;
+      linkingSubscription.remove();
       subscription.unsubscribe();
     };
   }, [completeOnboarding, setAuthError, setAuthLoading, setSession]);

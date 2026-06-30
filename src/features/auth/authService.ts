@@ -1,4 +1,5 @@
 import type { Session, User } from '@supabase/supabase-js';
+import * as Linking from 'expo-linking';
 
 import type { HydrationProfile } from '@/src/features/hydration/types';
 import { supabase } from '@/src/lib/supabase';
@@ -19,6 +20,31 @@ type SignInWithEmailInput = {
   email: string;
   password: string;
 };
+
+function getResetRedirectUrl() {
+  return Linking.createURL('/reset-password');
+}
+
+function readAuthRedirectParams(url: string) {
+  const params = new Map<string, string>();
+  const [, queryAndHash = ''] = url.split('?');
+  const [query = '', hash = ''] = queryAndHash.split('#');
+  const hashOnly = url.includes('#') ? url.split('#')[1] : '';
+  const segments = [query, hash, hashOnly].filter(Boolean);
+
+  for (const segment of segments) {
+    for (const pair of segment.split('&')) {
+      const [rawKey, rawValue = ''] = pair.split('=');
+      if (!rawKey) {
+        continue;
+      }
+
+      params.set(decodeURIComponent(rawKey), decodeURIComponent(rawValue.replace(/\+/g, ' ')));
+    }
+  }
+
+  return params;
+}
 
 export function buildProfileFromUser(user: User): HydrationProfile {
   const metadata = user.user_metadata ?? {};
@@ -120,6 +146,70 @@ export async function signInWithEmail({
     session: data.session,
     user: data.user,
   };
+}
+
+export async function requestPasswordReset(email: string) {
+  if (!supabase) {
+    throw new Error('Supabase is not configured yet.');
+  }
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: getResetRedirectUrl(),
+  });
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function updatePassword(password: string) {
+  if (!supabase) {
+    throw new Error('Supabase is not configured yet.');
+  }
+
+  const { data, error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    throw error;
+  }
+
+  return data.user;
+}
+
+export async function hydrateSessionFromAuthRedirect(url: string) {
+  if (!supabase) {
+    return false;
+  }
+
+  const params = readAuthRedirectParams(url);
+  const code = params.get('code');
+  const accessToken = params.get('access_token');
+  const refreshToken = params.get('refresh_token');
+
+  if (code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+    if (error) {
+      throw error;
+    }
+
+    return true;
+  }
+
+  if (accessToken && refreshToken) {
+    const { error } = await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    return true;
+  }
+
+  return false;
 }
 
 export async function signOut() {

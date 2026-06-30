@@ -14,8 +14,10 @@ import { signUpWithProfile } from '@/src/features/auth/authService';
 import { calculateDailyGoalMl, generateCheckpoints } from '@/src/features/hydration/hydrationMath';
 import { saveOnboardingPlan } from '@/src/features/hydration/hydrationRepository';
 import type { ActivityLevel, Climate, UnitPreference } from '@/src/features/hydration/types';
+import { scheduleCheckpointReminders } from '@/src/features/reminders/reminderService';
 import { useHydrationStore } from '@/src/store/hydrationStore';
 import { useProfileStore } from '@/src/store/profileStore';
+import { useReminderStore } from '@/src/store/reminderStore';
 import { colors, glassShadow, radius, spacing, type } from '@/src/theme/tokens';
 
 const activityOptions: { label: string; value: ActivityLevel }[] = [
@@ -56,6 +58,7 @@ const steps = [
 export default function OnboardingScreen() {
   const { profile, completeOnboarding } = useProfileStore();
   const { setGoal, setCheckpoints } = useHydrationStore();
+  const { setPermissionState, setScheduledNotificationIds, updateSettings } = useReminderStore();
   const [step, setStep] = useState(0);
   const [firstName, setFirstName] = useState(profile.firstName || profile.name);
   const [lastName, setLastName] = useState(profile.lastName);
@@ -142,6 +145,40 @@ export default function OnboardingScreen() {
         profile: savedProfile,
       });
 
+      if (savedProfile.notificationConsent) {
+        try {
+          const scheduledReminders = await scheduleCheckpointReminders({
+            checkpoints,
+            enabled: true,
+          });
+          setPermissionState('granted');
+          setScheduledNotificationIds(
+            scheduledReminders.map((reminder) => reminder.notificationId),
+          );
+          updateSettings({
+            activeEnd: sleepTime,
+            activeStart: wakeTime,
+            enabled: true,
+          });
+        } catch (error) {
+          const message =
+            error instanceof Error
+              ? error.message
+              : 'Hydration reminders need notification access. You can enable notifications in your device settings and try again.';
+          setPermissionState('denied', message);
+          setAuthError(message);
+          setIsSubmitting(false);
+          return;
+        }
+      } else {
+        setScheduledNotificationIds([]);
+        updateSettings({
+          activeEnd: sleepTime,
+          activeStart: wakeTime,
+          enabled: false,
+        });
+      }
+
       completeOnboarding(savedProfile);
       setGoal(goal);
       setCheckpoints(checkpoints);
@@ -188,9 +225,6 @@ export default function OnboardingScreen() {
           <Text style={styles.subtitle} variant="bodyLarge">
             A guided lock setup for hydration accountability.
           </Text>
-          <Button mode="text" textColor={colors.cyanSoft} onPress={() => router.push('./sign-in')}>
-            Already have an account? Sign in
-          </Button>
           <ProgressBar color={colors.cyan} progress={(step + 1) / steps.length} style={styles.progress} />
         </View>
 
@@ -394,6 +428,14 @@ export default function OnboardingScreen() {
             {step === steps.length - 1 ? 'Activate HydraLock' : 'Continue'}
           </Button>
         </View>
+        <Button
+          mode="text"
+          textColor={colors.cyanSoft}
+          onPress={() => router.push('./sign-in')}
+          style={styles.signInButton}
+        >
+          Already have an account? Sign in
+        </Button>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -614,5 +656,9 @@ const styles = StyleSheet.create({
   },
   buttonContent: {
     minHeight: 52,
+  },
+  signInButton: {
+    alignSelf: 'center',
+    marginTop: -spacing.sm,
   },
 });
