@@ -1,8 +1,10 @@
 import { fireEvent, render } from '@testing-library/react-native';
 import { Provider as PaperProvider } from 'react-native-paper';
 
+import HistoryScreen from '@/app/(tabs)/history';
 import TodayScreen from '@/app/(tabs)/index';
 import OnboardingScreen from '@/app/onboarding';
+import SignInScreen from '@/app/sign-in';
 import { useHydrationStore } from '@/src/store/hydrationStore';
 import { useProfileStore } from '@/src/store/profileStore';
 import { hydraLockTheme } from '@/src/theme/paperTheme';
@@ -46,6 +48,20 @@ describe('HydraLock screens', () => {
 
     expect(view.getByText('HydraLock')).toBeTruthy();
     expect(view.getByText('Create your WaterFirst profile')).toBeTruthy();
+  });
+
+  it('renders sign in fields', async () => {
+    const view = await renderWithTheme(<SignInScreen />);
+
+    expect(view.getAllByText('Sign in').length).toBeGreaterThan(0);
+    expect(view.getByText('HydraLock account')).toBeTruthy();
+  });
+
+  it('renders history calendar summary', async () => {
+    const view = await renderWithTheme(<HistoryScreen />);
+
+    expect(view.getByText('History')).toBeTruthy();
+    expect(view.getByText('Daily summary')).toBeTruthy();
   });
 
   it('logs a preset amount from the today screen', async () => {

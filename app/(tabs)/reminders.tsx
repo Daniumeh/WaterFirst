@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Card, Switch, Text, TextInput } from 'react-native-paper';
 
+import { addLocalMinutes, getDeviceNow } from '@/src/features/hydration/deviceTime';
 import { requestReminderPermissions } from '@/src/features/reminders/reminderService';
 import { useReminderStore } from '@/src/store/reminderStore';
 import { colors, radius, spacing } from '@/src/theme/tokens';
@@ -81,7 +82,7 @@ export default function RemindersScreen() {
       <Button
         mode="outlined"
         textColor={colors.cyanSoft}
-        onPress={() => pauseUntil(new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString())}
+        onPress={() => pauseUntil(addLocalMinutes(getDeviceNow(), 120).toISOString())}
       >
         Pause for 2 hours
       </Button>

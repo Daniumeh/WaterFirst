@@ -1,22 +1,27 @@
 import { StyleSheet, View } from 'react-native';
 import { Card, Text } from 'react-native-paper';
 
+import {
+  getCheckpointStatus as getDeviceCheckpointStatus,
+  getDeviceNow,
+} from '@/src/features/hydration/deviceTime';
 import { formatHydrationAmount, type HydrationUnit } from '@/src/features/hydration/units';
 import type { HydrationCheckpoint } from '@/src/features/hydration/types';
 import { colors, glassShadow, radius, spacing, type } from '@/src/theme/tokens';
 
-type TimelineStatus = 'Completed' | 'Missed' | 'Upcoming';
-
 type HydrationTimelineProps = {
   checkpoints: HydrationCheckpoint[];
   consumedMl: number;
+  now?: Date;
   unit: HydrationUnit;
 };
 
-export function HydrationTimeline({ checkpoints, consumedMl, unit }: HydrationTimelineProps) {
-  const now = new Date();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-
+export function HydrationTimeline({
+  checkpoints,
+  consumedMl,
+  now = getDeviceNow(),
+  unit,
+}: HydrationTimelineProps) {
   return (
     <Card mode="contained" style={styles.card}>
       <Card.Content style={styles.content}>
@@ -30,7 +35,7 @@ export function HydrationTimeline({ checkpoints, consumedMl, unit }: HydrationTi
           <Text style={styles.link}>View Full Schedule ›</Text>
         </View>
         {checkpoints.map((checkpoint) => {
-          const status = getCheckpointStatus(checkpoint, consumedMl, currentMinutes);
+          const status = getDeviceCheckpointStatus(checkpoint, consumedMl, now);
 
           return (
             <View key={checkpoint.id} style={styles.row}>
@@ -39,7 +44,7 @@ export function HydrationTimeline({ checkpoints, consumedMl, unit }: HydrationTi
                 <Text style={styles.line}>{checkpoint.timeLabel}</Text>
               </View>
               <View style={styles.amountColumn}>
-                <Text style={styles.line}>{formatHydrationAmount(500, unit)}</Text>
+                <Text style={styles.line}>{formatHydrationAmount(checkpoint.targetMl, unit)}</Text>
               </View>
               <View style={styles.statusColumn}>
                 <Text style={[styles.status, styles[`${status}Text`]]}>{status}</Text>
@@ -50,22 +55,6 @@ export function HydrationTimeline({ checkpoints, consumedMl, unit }: HydrationTi
       </Card.Content>
     </Card>
   );
-}
-
-function getCheckpointStatus(
-  checkpoint: HydrationCheckpoint,
-  consumedMl: number,
-  currentMinutes: number,
-): TimelineStatus {
-  if (consumedMl >= checkpoint.targetMl) {
-    return 'Completed';
-  }
-
-  if (checkpoint.dueMinutes < currentMinutes) {
-    return 'Missed';
-  }
-
-  return 'Upcoming';
 }
 
 const styles = StyleSheet.create({

@@ -1,4 +1,4 @@
-import { Redirect } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import {
@@ -188,6 +188,9 @@ export default function OnboardingScreen() {
           <Text style={styles.subtitle} variant="bodyLarge">
             A guided lock setup for hydration accountability.
           </Text>
+          <Button mode="text" textColor={colors.cyanSoft} onPress={() => router.push('./sign-in')}>
+            Already have an account? Sign in
+          </Button>
           <ProgressBar color={colors.cyan} progress={(step + 1) / steps.length} style={styles.progress} />
         </View>
 

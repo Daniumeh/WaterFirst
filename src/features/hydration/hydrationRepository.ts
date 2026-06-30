@@ -5,6 +5,8 @@ import type {
 } from '@/src/features/hydration/types';
 import { supabase } from '@/src/lib/supabase';
 
+import { getAccurateLogTimestamp, getDeviceNow, getLocalDateKey } from './deviceTime';
+
 type SaveOnboardingPlanInput = {
   checkpoints: HydrationCheckpoint[];
   goal: HydrationGoal;
@@ -33,7 +35,7 @@ export async function saveOnboardingPlan({
     return;
   }
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getLocalDateKey();
 
   const { error: profileError } = await supabase.from('profiles').upsert({
     id: user.id,
@@ -130,7 +132,7 @@ export async function saveOnboardingPlan({
   }
 }
 
-export async function saveWaterLog(amountMl: number, source = 'quick_log') {
+export async function saveWaterLog(amountMl: number, source = 'quick_log', loggedAt = getDeviceNow()) {
   if (!supabase) {
     return;
   }
@@ -146,6 +148,7 @@ export async function saveWaterLog(amountMl: number, source = 'quick_log') {
 
   await supabase.from('water_logs').insert({
     amount_ml: amountMl,
+    logged_at: getAccurateLogTimestamp(loggedAt),
     source,
     unit: 'ml',
     user_id: user.id,

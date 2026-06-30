@@ -15,6 +15,44 @@ type AuthResult = {
   user: User | null;
 };
 
+type SignInWithEmailInput = {
+  email: string;
+  password: string;
+};
+
+export function buildProfileFromUser(user: User): HydrationProfile {
+  const metadata = user.user_metadata ?? {};
+  const firstName = typeof metadata.first_name === 'string' ? metadata.first_name : '';
+  const lastName = typeof metadata.last_name === 'string' ? metadata.last_name : '';
+  const fallbackName = [firstName, lastName].filter(Boolean).join(' ').trim();
+
+  return {
+    name: fallbackName || user.email?.split('@')[0] || 'HydraLock User',
+    firstName,
+    lastName,
+    email: user.email ?? '',
+    weight: typeof metadata.weight === 'number' ? metadata.weight : 180,
+    activityLevel:
+      metadata.activity_level === 'light' ||
+      metadata.activity_level === 'moderate' ||
+      metadata.activity_level === 'high'
+        ? metadata.activity_level
+        : 'moderate',
+    activityDescription:
+      typeof metadata.activity_description === 'string' ? metadata.activity_description : '',
+    climate:
+      metadata.climate === 'cool' || metadata.climate === 'temperate' || metadata.climate === 'hot'
+        ? metadata.climate
+        : 'temperate',
+    wakeTime: typeof metadata.wake_time === 'string' ? metadata.wake_time : '07:00',
+    sleepTime: typeof metadata.sleep_time === 'string' ? metadata.sleep_time : '22:30',
+    unitPreference: metadata.unit_preference === 'metric' ? 'metric' : 'imperial',
+    notificationConsent: Boolean(metadata.notification_consent),
+    softLockConsent: Boolean(metadata.soft_lock_consent),
+    onboardingComplete: true,
+  };
+}
+
 export async function signUpWithProfile({
   email,
   password,
@@ -55,6 +93,30 @@ export async function signUpWithProfile({
 
   return {
     needsEmailConfirmation: Boolean(data.user && !data.session),
+    session: data.session,
+    user: data.user,
+  };
+}
+
+export async function signInWithEmail({
+  email,
+  password,
+}: SignInWithEmailInput): Promise<AuthResult> {
+  if (!supabase) {
+    throw new Error('Supabase is not configured yet.');
+  }
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return {
+    needsEmailConfirmation: false,
     session: data.session,
     user: data.user,
   };

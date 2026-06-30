@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 import type { HydrationProfile } from '@/src/features/hydration/types';
 
-const defaultProfile: HydrationProfile = {
+export const defaultProfile: HydrationProfile = {
   name: '',
   firstName: '',
   lastName: '',

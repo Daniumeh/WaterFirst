@@ -1,6 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 import { Card, Text } from 'react-native-paper';
 
+import { getDeviceNow, getLocalMinutes } from '@/src/features/hydration/deviceTime';
 import { formatHydrationAmount, type HydrationUnit } from '@/src/features/hydration/units';
 import type { HydrationCheckpoint } from '@/src/features/hydration/types';
 import { colors, glassShadow, radius, spacing, type } from '@/src/theme/tokens';
@@ -8,12 +9,17 @@ import { colors, glassShadow, radius, spacing, type } from '@/src/theme/tokens';
 type HydrationActionCardProps = {
   checkpoint: HydrationCheckpoint | null;
   consumedMl: number;
+  now?: Date;
   unit: HydrationUnit;
 };
 
-export function HydrationActionCard({ checkpoint, consumedMl, unit }: HydrationActionCardProps) {
-  const now = new Date();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+export function HydrationActionCard({
+  checkpoint,
+  consumedMl,
+  now = getDeviceNow(),
+  unit,
+}: HydrationActionCardProps) {
+  const currentMinutes = getLocalMinutes(now);
   const isMissed = checkpoint ? checkpoint.dueMinutes < currentMinutes && consumedMl < checkpoint.targetMl : false;
   const amountDueMl = checkpoint ? Math.max(checkpoint.targetMl - consumedMl, 0) : 0;
   const minutesUntilDue = checkpoint

@@ -1,4 +1,5 @@
 import type { HydrationCheckpoint } from '../hydration/types';
+import { getLocalMinutes } from '../hydration/deviceTime';
 
 type SoftLockInput = {
   checkpoints: HydrationCheckpoint[];
@@ -17,7 +18,7 @@ export function shouldTriggerSoftLock(input: SoftLockInput) {
     return false;
   }
 
-  const currentMinutes = input.now.getHours() * 60 + input.now.getMinutes();
+  const currentMinutes = getLocalMinutes(input.now);
   const missedCheckpoint = input.checkpoints.find(
     (checkpoint) => checkpoint.dueMinutes < currentMinutes && input.loggedMl < checkpoint.targetMl,
   );

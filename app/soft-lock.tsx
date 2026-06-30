@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import { Button, Card, ProgressBar, Text } from 'react-native-paper';
 
+import { addLocalMinutes, getDeviceNow } from '@/src/features/hydration/deviceTime';
 import { useAccountabilityStore } from '@/src/store/accountabilityStore';
 import { useHydrationStore } from '@/src/store/hydrationStore';
 import { colors, radius, shadow, spacing } from '@/src/theme/tokens';
@@ -54,7 +55,7 @@ export default function SoftLockScreen() {
             mode="outlined"
             textColor={colors.cyanSoft}
             onPress={() => {
-              snoozeUntil(new Date(Date.now() + 30 * 60 * 1000).toISOString());
+              snoozeUntil(addLocalMinutes(getDeviceNow(), 30).toISOString());
               router.replace('/(tabs)');
             }}
           >

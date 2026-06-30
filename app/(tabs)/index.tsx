@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text } from 'react-native-paper';
 
@@ -9,9 +9,18 @@ import { HydrationTimeline } from '@/src/components/dashboard/HydrationTimeline'
 import { QuickLogWater } from '@/src/components/dashboard/QuickLogWater';
 import { SoftLockStatusCard } from '@/src/components/dashboard/SoftLockStatusCard';
 import { StatsCard } from '@/src/components/dashboard/StatsCard';
+import {
+  calculateComplianceScore,
+  calculateExpectedMlByNow,
+  calculateLocalStreak,
+  filterLogsForLocalDate,
+  getActionCheckpoint,
+  getDeviceNow,
+  getDeviceTimeZone,
+  minutesUntilLocalMidnight,
+} from '@/src/features/hydration/deviceTime';
 import type { HydrationUnit } from '@/src/features/hydration/units';
 import { formatHydrationAmount } from '@/src/features/hydration/units';
-import type { HydrationCheckpoint } from '@/src/features/hydration/types';
 import { useHydrationStore } from '@/src/store/hydrationStore';
 import { useProfileStore } from '@/src/store/profileStore';
 import { colors, glassShadow, radius, spacing, type } from '@/src/theme/tokens';
@@ -19,25 +28,63 @@ import { colors, glassShadow, radius, spacing, type } from '@/src/theme/tokens';
 export default function DashboardScreen() {
   const { width } = useWindowDimensions();
   const profile = useProfileStore((state) => state.profile);
-  const { checkpoints, goal, logWater, logs, progress } = useHydrationStore();
+  const { checkpoints, goal, logWater, logs, progress, syncWithDeviceDate } = useHydrationStore();
+  const [now, setNow] = useState(() => getDeviceNow());
   const [unit, setUnit] = useState<HydrationUnit>('cl');
   const [customAmount, setCustomAmount] = useState('');
 
+  useEffect(() => {
+    syncWithDeviceDate();
+
+    const interval = setInterval(() => {
+      setNow(getDeviceNow());
+      syncWithDeviceDate();
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [syncWithDeviceDate]);
+
   const actionCheckpoint = useMemo(
-    () => getActionCheckpoint(checkpoints, progress.loggedMl),
-    [checkpoints, progress.loggedMl],
+    () => getActionCheckpoint(checkpoints, progress.loggedMl, now),
+    [checkpoints, now, progress.loggedMl],
   );
   const complianceScore = useMemo(
-    () => calculateComplianceScore(checkpoints, progress.loggedMl),
-    [checkpoints, progress.loggedMl],
+    () => calculateComplianceScore(checkpoints, progress.loggedMl, now),
+    [checkpoints, now, progress.loggedMl],
   );
   const nextEnforcementTime = actionCheckpoint?.timeLabel ?? 'Tomorrow';
+  const todayLogs = useMemo(() => filterLogsForLocalDate(logs, now), [logs, now]);
+  const expectedMlByNow = useMemo(
+    () => calculateExpectedMlByNow(checkpoints, goal.targetMl, now),
+    [checkpoints, goal.targetMl, now],
+  );
   const insights = useMemo(
-    () => buildHealthInsights(progress.percentComplete, complianceScore, logs.length),
-    [complianceScore, logs.length, progress.percentComplete],
+    () =>
+      buildHealthInsights({
+        complianceScore,
+        drinkCount: todayLogs.length,
+        expectedMlByNow,
+        loggedMl: progress.loggedMl,
+        minutesUntilReset: minutesUntilLocalMidnight(now),
+        percentComplete: progress.percentComplete,
+        timeZone: getDeviceTimeZone(),
+      }),
+    [
+      complianceScore,
+      expectedMlByNow,
+      now,
+      progress.loggedMl,
+      progress.percentComplete,
+      todayLogs.length,
+    ],
+  );
+  const currentStreak = useMemo(
+    () => calculateLocalStreak(logs, goal.targetMl, now),
+    [goal.targetMl, logs, now],
   );
   const firstName = profile.firstName || 'Hydra';
   const isCompactPhone = Math.min(width, 430) <= 360;
+  const localTimeLabel = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 
   return (
     <ScrollView
@@ -50,7 +97,7 @@ export default function DashboardScreen() {
       <View style={styles.reservoirBand} />
       <View style={styles.waterline} />
       <View style={styles.statusBar}>
-        <Text style={styles.timeText}>9:41</Text>
+        <Text style={styles.timeText}>{localTimeLabel}</Text>
         <Text style={styles.signalText}>▮▮▮ ᯤ ▱</Text>
       </View>
       <View style={styles.header}>
@@ -84,6 +131,7 @@ export default function DashboardScreen() {
         <HydrationActionCard
           checkpoint={actionCheckpoint}
           consumedMl={progress.loggedMl}
+          now={now}
           unit={unit}
         />
 
@@ -98,52 +146,52 @@ export default function DashboardScreen() {
         <StatsCard
           label="Consumed Today"
           value={formatHydrationAmount(progress.loggedMl, unit)}
-          helper={`${logs.length} Drinks`}
+          helper={`${todayLogs.length} Drinks`}
         />
         <StatsCard
           label="Remaining"
           value={formatHydrationAmount(progress.remainingMl, unit)}
           helper="To goal"
         />
-        <StatsCard label="Current Streak" value="7 Days" helper="Mock streak" />
+        <StatsCard label="Current Streak" value={`${currentStreak} Days`} helper="Local streak" />
       </View>
 
       <HealthInsightsCard insights={insights} />
 
-      <HydrationTimeline checkpoints={checkpoints} consumedMl={progress.loggedMl} unit={unit} />
+      <HydrationTimeline checkpoints={checkpoints} consumedMl={progress.loggedMl} now={now} unit={unit} />
     </ScrollView>
   );
 }
 
-function getActionCheckpoint(checkpoints: HydrationCheckpoint[], consumedMl: number) {
-  const now = new Date();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-  const missed = checkpoints.find(
-    (checkpoint) => checkpoint.dueMinutes < currentMinutes && consumedMl < checkpoint.targetMl,
-  );
+type HealthInsightInput = {
+  complianceScore: number;
+  drinkCount: number;
+  expectedMlByNow: number;
+  loggedMl: number;
+  minutesUntilReset: number;
+  percentComplete: number;
+  timeZone: string;
+};
 
-  if (missed) {
-    return missed;
-  }
-
-  return checkpoints.find((checkpoint) => checkpoint.targetMl > consumedMl) ?? null;
-}
-
-function calculateComplianceScore(checkpoints: HydrationCheckpoint[], consumedMl: number) {
-  if (checkpoints.length === 0) {
-    return 100;
-  }
-
-  const completed = checkpoints.filter((checkpoint) => consumedMl >= checkpoint.targetMl).length;
-
-  return Math.max(20, Math.round((completed / checkpoints.length) * 100));
-}
-
-function buildHealthInsights(percentComplete: number, complianceScore: number, drinkCount: number) {
+function buildHealthInsights({
+  complianceScore,
+  drinkCount,
+  expectedMlByNow,
+  loggedMl,
+  minutesUntilReset,
+  percentComplete,
+  timeZone,
+}: HealthInsightInput) {
   const insights = [];
+  const scheduleDelta = loggedMl - expectedMlByNow;
+  const schedulePercent = expectedMlByNow > 0 ? Math.round((scheduleDelta / expectedMlByNow) * 100) : 0;
 
   if (percentComplete >= 100) {
     insights.push('Great job staying consistent. You completed your hydration goal today.');
+  } else if (schedulePercent >= 10) {
+    insights.push(`You're ${schedulePercent}% ahead of your local schedule today.`);
+  } else if (schedulePercent <= -10) {
+    insights.push("Your next drink can bring you back toward today's local schedule.");
   } else if (percentComplete >= 65) {
     insights.push("You're ahead of your usual pace today. Keep the rhythm steady.");
   } else {
@@ -159,8 +207,10 @@ function buildHealthInsights(percentComplete: number, complianceScore: number, d
   if (drinkCount >= 4) {
     insights.push('Frequent small drinks are working well for you today.');
   } else {
-    insights.push('Try pairing your next drink with a routine you already do.');
+    insights.push(`Today resets in about ${minutesUntilReset} minutes on your phone's local time.`);
   }
+
+  insights.push(`Timing is following your device timezone: ${timeZone}.`);
 
   return insights;
 }

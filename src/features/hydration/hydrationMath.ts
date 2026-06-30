@@ -5,6 +5,7 @@ import type {
   HydrationProgress,
   UnitPreference,
 } from './types';
+import { getLocalMinutes } from './deviceTime';
 
 const ML_PER_OUNCE = 29.5735;
 const KG_PER_POUND = 0.453592;
@@ -74,7 +75,7 @@ export function generateCheckpoints(
 }
 
 export function getNextCheckpoint(checkpoints: HydrationCheckpoint[], now: Date) {
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const currentMinutes = getLocalMinutes(now);
 
   return checkpoints.find((checkpoint) => checkpoint.dueMinutes >= currentMinutes) ?? null;
 }

@@ -1,5 +1,11 @@
 import { create } from 'zustand';
 
+import {
+  getAccurateLogTimestamp,
+  getDeviceNow,
+  getLocalDateKey,
+  sumLogsForLocalDate,
+} from '@/src/features/hydration/deviceTime';
 import { calculateProgress, generateCheckpoints } from '@/src/features/hydration/hydrationMath';
 import { saveWaterLog } from '@/src/features/hydration/hydrationRepository';
 import type {
@@ -16,6 +22,7 @@ const defaultGoal: HydrationGoal = {
 };
 
 type HydrationStore = {
+  activeDateKey: string;
   checkpoints: HydrationCheckpoint[];
   goal: HydrationGoal;
   logs: HydrationLog[];
@@ -23,15 +30,19 @@ type HydrationStore = {
   logWater: (amountMl: number) => void;
   setCheckpoints: (checkpoints: HydrationCheckpoint[]) => void;
   setGoal: (goal: HydrationGoal) => void;
+  syncWithDeviceDate: () => void;
 };
 
 export const useHydrationStore = create<HydrationStore>((set) => ({
+  activeDateKey: getLocalDateKey(),
   checkpoints: generateCheckpoints(defaultGoal.targetMl, '07:00', '22:30'),
   goal: defaultGoal,
   logs: [],
   progress: calculateProgress(0, defaultGoal.targetMl),
   logWater: (amountMl) =>
     set((state) => {
+      const now = getDeviceNow();
+      const activeDateKey = getLocalDateKey(now);
       const safeAmount = Math.max(Math.round(amountMl), 0);
 
       if (safeAmount === 0) {
@@ -40,17 +51,18 @@ export const useHydrationStore = create<HydrationStore>((set) => ({
 
       const logs = [
         {
-          id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          id: `${now.getTime()}-${Math.random().toString(16).slice(2)}`,
           amountMl: safeAmount,
-          loggedAt: new Date().toISOString(),
+          loggedAt: getAccurateLogTimestamp(now),
         },
         ...state.logs,
       ];
-      const loggedMl = logs.reduce((total, log) => total + log.amountMl, 0);
+      const loggedMl = sumLogsForLocalDate(logs, now);
 
-      void saveWaterLog(safeAmount);
+      void saveWaterLog(safeAmount, 'quick_log', now);
 
       return {
+        activeDateKey,
         logs,
         progress: calculateProgress(loggedMl, state.goal.targetMl),
       };
@@ -59,6 +71,17 @@ export const useHydrationStore = create<HydrationStore>((set) => ({
   setGoal: (goal) =>
     set((state) => ({
       goal,
-      progress: calculateProgress(state.progress.loggedMl, goal.targetMl),
+      progress: calculateProgress(sumLogsForLocalDate(state.logs), goal.targetMl),
     })),
+  syncWithDeviceDate: () =>
+    set((state) => {
+      const now = getDeviceNow();
+      const activeDateKey = getLocalDateKey(now);
+      const loggedMl = sumLogsForLocalDate(state.logs, now);
+
+      return {
+        activeDateKey,
+        progress: calculateProgress(loggedMl, state.goal.targetMl),
+      };
+    }),
 }));
