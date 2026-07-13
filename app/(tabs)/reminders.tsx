@@ -11,7 +11,7 @@ import {
 } from '@/src/features/reminders/reminderService';
 import { useHydrationStore } from '@/src/store/hydrationStore';
 import { useReminderStore } from '@/src/store/reminderStore';
-import { colors, radius, spacing } from '@/src/theme/tokens';
+import { colors, radius, spacing, typography } from '@/src/theme/tokens';
 
 export default function RemindersScreen() {
   const { goal, checkpoints, setCheckpoints } = useHydrationStore();
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.text,
-    fontWeight: '800',
+    ...typography.h1,
   },
   card: {
     borderColor: colors.border,
@@ -217,14 +217,15 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     color: colors.text,
-    fontWeight: '800',
+    ...typography.h1,
   },
   subtitle: {
     color: colors.muted,
+    ...typography.body1,
   },
   permissionMessage: {
     color: colors.orange,
-    lineHeight: 21,
+    ...typography.body1,
   },
   row: {
     alignItems: 'center',

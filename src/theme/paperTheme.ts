@@ -1,10 +1,21 @@
 import { MD3DarkTheme } from 'react-native-paper';
 
-import { colors } from './tokens';
+import { colors, typography } from './tokens';
 
 export const hydraLockTheme = {
   ...MD3DarkTheme,
-  roundness: 2,
+  roundness: 4,
+  fonts: {
+    ...MD3DarkTheme.fonts,
+    bodyLarge: { ...MD3DarkTheme.fonts.bodyLarge, ...typography.body1 },
+    bodyMedium: { ...MD3DarkTheme.fonts.bodyMedium, ...typography.body1 },
+    bodySmall: { ...MD3DarkTheme.fonts.bodySmall, ...typography.body2 },
+    displaySmall: { ...MD3DarkTheme.fonts.displaySmall, ...typography.h1 },
+    headlineSmall: { ...MD3DarkTheme.fonts.headlineSmall, ...typography.h1 },
+    labelLarge: { ...MD3DarkTheme.fonts.labelLarge, ...typography.h2 },
+    titleLarge: { ...MD3DarkTheme.fonts.titleLarge, ...typography.h1 },
+    titleMedium: { ...MD3DarkTheme.fonts.titleMedium, ...typography.h2 },
+  },
   colors: {
     ...MD3DarkTheme.colors,
     primary: colors.cyan,

@@ -5,9 +5,11 @@ import {
   getCheckpointStatus as getDeviceCheckpointStatus,
   getDeviceNow,
 } from '@/src/features/hydration/deviceTime';
-import { formatHydrationAmount, type HydrationUnit } from '@/src/features/hydration/units';
 import type { HydrationCheckpoint } from '@/src/features/hydration/types';
-import { colors, glassShadow, radius, spacing, type } from '@/src/theme/tokens';
+import { formatHydrationAmount, type HydrationUnit } from '@/src/features/hydration/units';
+import { colors, glassShadow, radius, spacing, typography } from '@/src/theme/tokens';
+
+import { DashboardIcon, dashboardIcons } from './DashboardIcon';
 
 type HydrationTimelineProps = {
   checkpoints: HydrationCheckpoint[];
@@ -27,31 +29,34 @@ export function HydrationTimeline({
       <Card.Content style={styles.content}>
         <View style={styles.headerRow}>
           <View style={styles.titleRow}>
-            <View style={styles.icon} />
-            <Text style={styles.title} variant="titleLarge">
-              Today Timeline
-            </Text>
+            <View style={styles.iconBubble}>
+              <DashboardIcon name={dashboardIcons.calendar} size={20} color={colors.cyanSoft} />
+            </View>
+            <View>
+              <Text style={styles.kicker}>Local schedule</Text>
+              <Text style={styles.title}>Today timeline</Text>
+            </View>
           </View>
-          <Text style={styles.link}>View Full Schedule ›</Text>
+          <Text style={styles.link}>View full schedule</Text>
         </View>
-        {checkpoints.map((checkpoint) => {
-          const status = getDeviceCheckpointStatus(checkpoint, consumedMl, now);
 
-          return (
-            <View key={checkpoint.id} style={styles.row}>
-              <View style={[styles.dot, styles[status]]} />
-              <View style={styles.timeColumn}>
-                <Text style={styles.line}>{checkpoint.timeLabel}</Text>
-              </View>
-              <View style={styles.amountColumn}>
-                <Text style={styles.line}>{formatHydrationAmount(checkpoint.targetMl, unit)}</Text>
-              </View>
-              <View style={styles.statusColumn}>
+        <View style={styles.timeline}>
+          <View style={styles.rail} />
+          {checkpoints.map((checkpoint) => {
+            const status = getDeviceCheckpointStatus(checkpoint, consumedMl, now);
+
+            return (
+              <View key={checkpoint.id} style={styles.row}>
+                <View style={[styles.dot, styles[status]]} />
+                <View style={styles.copy}>
+                  <Text style={styles.time}>{checkpoint.timeLabel}</Text>
+                  <Text style={styles.amount}>{formatHydrationAmount(checkpoint.targetMl, unit)}</Text>
+                </View>
                 <Text style={[styles.status, styles[`${status}Text`]]}>{status}</Text>
               </View>
-            </View>
-          );
-        })}
+            );
+          })}
+        </View>
       </Card.Content>
     </Card>
   );
@@ -59,57 +64,75 @@ export function HydrationTimeline({
 
 const styles = StyleSheet.create({
   card: {
-    borderColor: colors.border,
-    borderRadius: radius.lg,
+    borderColor: colors.line,
+    borderRadius: radius.xl,
     borderWidth: 1,
-    backgroundColor: colors.glass,
+    backgroundColor: 'rgba(10, 36, 55, 0.62)',
     ...glassShadow,
   },
   content: {
-    gap: spacing.md,
+    gap: spacing.lg,
+    padding: spacing.lg,
   },
   headerRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
+    gap: spacing.md,
     justifyContent: 'space-between',
   },
   titleRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    flexShrink: 1,
-    flexWrap: 'wrap',
-    gap: spacing.sm,
+    flex: 1,
+    gap: spacing.md,
   },
-  icon: {
-    width: 18,
-    height: 18,
-    borderColor: colors.cyan,
-    borderRadius: 4,
-    borderWidth: 2,
-    backgroundColor: 'rgba(32, 199, 255, 0.16)',
+  iconBubble: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(32, 199, 255, 0.1)',
+  },
+  kicker: {
+    color: colors.muted,
+    ...typography.h2,
   },
   title: {
     color: colors.text,
-    fontWeight: '900',
+    ...typography.h1,
+    marginTop: 2,
   },
   link: {
     color: colors.cyan,
-    fontSize: 13,
-    fontWeight: '700',
+    ...typography.h2,
+  },
+  timeline: {
+    gap: spacing.md,
+    position: 'relative',
+  },
+  rail: {
+    position: 'absolute',
+    bottom: 15,
+    left: 9,
+    top: 15,
+    width: 2,
+    borderRadius: 1,
+    backgroundColor: colors.line,
   },
   row: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: spacing.md,
+    minHeight: 42,
   },
   dot: {
-    width: 13,
-    height: 13,
-    borderRadius: 7,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     borderColor: colors.ink,
-    borderWidth: 2,
+    borderWidth: 3,
+    zIndex: 1,
   },
   Completed: {
     backgroundColor: colors.green,
@@ -120,29 +143,21 @@ const styles = StyleSheet.create({
   Upcoming: {
     backgroundColor: colors.cyan,
   },
-  timeColumn: {
+  copy: {
     flex: 1,
-    minWidth: 72,
-    borderLeftColor: colors.line,
-    borderLeftWidth: 1,
-    paddingLeft: spacing.sm,
+    minWidth: 0,
   },
-  amountColumn: {
-    flexBasis: 56,
-    flexShrink: 1,
-  },
-  statusColumn: {
-    flexBasis: 76,
-    flexShrink: 1,
-  },
-  line: {
+  time: {
     color: colors.text,
-    fontFamily: type.data,
-    fontWeight: '700',
+    ...typography.h1,
+  },
+  amount: {
+    color: colors.muted,
+    ...typography.body2,
+    marginTop: 2,
   },
   status: {
-    fontSize: 12,
-    fontWeight: '800',
+    ...typography.h2,
   },
   CompletedText: {
     color: colors.green,
@@ -151,6 +166,6 @@ const styles = StyleSheet.create({
     color: colors.orange,
   },
   UpcomingText: {
-    color: colors.cyan,
+    color: colors.muted,
   },
 });

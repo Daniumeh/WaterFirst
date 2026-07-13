@@ -5,7 +5,7 @@ import { Button, Card, ProgressBar, Text } from 'react-native-paper';
 import { addLocalMinutes, getDeviceNow } from '@/src/features/hydration/deviceTime';
 import { useAccountabilityStore } from '@/src/store/accountabilityStore';
 import { useHydrationStore } from '@/src/store/hydrationStore';
-import { colors, radius, shadow, spacing } from '@/src/theme/tokens';
+import { colors, radius, shadow, spacing, typography } from '@/src/theme/tokens';
 
 const quickLogMl = 250;
 
@@ -118,19 +118,20 @@ const styles = StyleSheet.create({
   },
   powerIcon: {
     color: colors.text,
-    fontWeight: '800',
+    ...typography.h1,
   },
   kicker: {
     color: colors.orange,
-    fontWeight: '800',
+    ...typography.h2,
   },
   title: {
     color: colors.text,
-    fontWeight: '800',
+    ...typography.h1,
     textAlign: 'center',
   },
   subtitle: {
     color: colors.muted,
+    ...typography.body1,
     textAlign: 'center',
   },
   progressBar: {

@@ -4,7 +4,7 @@ import { Button, Card, Text } from 'react-native-paper';
 import { signOut } from '@/src/features/auth/authService';
 import { useAuthStore } from '@/src/store/authStore';
 import { useProfileStore } from '@/src/store/profileStore';
-import { colors, radius, spacing } from '@/src/theme/tokens';
+import { colors, radius, spacing, typography } from '@/src/theme/tokens';
 
 export default function ProfileScreen() {
   const user = useAuthStore((state) => state.user);
@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.text,
-    fontWeight: '900',
+    ...typography.h1,
   },
   card: {
     borderColor: colors.border,
@@ -62,10 +62,10 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     color: colors.text,
-    fontWeight: '900',
+    ...typography.h1,
   },
   subtitle: {
     color: colors.muted,
-    lineHeight: 21,
+    ...typography.body1,
   },
 });

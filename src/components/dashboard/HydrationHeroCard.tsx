@@ -2,8 +2,9 @@ import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Card, Text } from 'react-native-paper';
 
 import { formatHydrationAmount, type HydrationUnit } from '@/src/features/hydration/units';
-import { colors, glassShadow, radius, spacing, type } from '@/src/theme/tokens';
+import { colors, glassShadow, radius, spacing, type, typography } from '@/src/theme/tokens';
 
+import { DashboardIcon, dashboardIcons } from './DashboardIcon';
 import { KidneyProgressRing } from './KidneyProgressRing';
 import { UnitSwitcher } from './UnitSwitcher';
 
@@ -28,15 +29,16 @@ export function HydrationHeroCard({
 
   return (
     <Card mode="contained" style={styles.card}>
-      <View style={styles.capsuleRail} />
-      <View style={styles.capsuleWash} />
+      <View style={styles.heroGlow} />
       <Card.Content style={styles.content}>
         <View style={[styles.topRow, isCompactPhone && styles.topRowCompact]}>
           <View style={styles.progressLabelRow}>
-            <View style={styles.dropIcon} />
+            <View style={styles.iconBubble}>
+              <DashboardIcon name={dashboardIcons.droplet} size={18} color={colors.cyan} />
+            </View>
             <View>
-              <Text style={styles.eyebrow}>Hydration capsule</Text>
-              <Text style={styles.title}>{isFull ? 'Full reservoir' : "Today's Progress"}</Text>
+              <Text style={styles.eyebrow}>Today Progress</Text>
+              <Text style={styles.title}>{isFull ? 'Goal Completed' : "Today's hydration"}</Text>
             </View>
           </View>
           <UnitSwitcher unit={unit} onChange={onUnitChange} />
@@ -44,29 +46,28 @@ export function HydrationHeroCard({
 
         <View style={[styles.heroRow, isCompactPhone && styles.heroRowCompact]}>
           <View style={[styles.metricColumn, isCompactPhone && styles.metricColumnCompact]}>
-            <Text style={styles.percent} variant="displayMedium">
+            <Text style={styles.percent}>
               {percentComplete}
               <Text style={styles.percentSymbol}>%</Text>
             </Text>
-            <Text style={styles.amountLine} variant="titleLarge">
-              <Text style={styles.amountHighlight}>{formatHydrationAmount(consumedMl, unit)}</Text> /{' '}
-              {formatHydrationAmount(targetMl, unit)}
-            </Text>
-            <Text style={styles.dailyGoal}>Daily Goal</Text>
-            <View style={styles.statusBox}>
-              <View style={styles.statusDot} />
-              <Text style={styles.statusText}>{isFull ? 'Fully Replenished' : 'On Track'}</Text>
-              <Text style={styles.statusSubtext}>{isFull ? 'Goal Completed Today' : 'Keep it up!'}</Text>
+            <View style={styles.amountStack}>
+              <Text style={styles.amountLabel}>Consumed</Text>
+              <Text style={styles.amountLine}>
+                <Text style={styles.amountHighlight}>{formatHydrationAmount(consumedMl, unit)}</Text>
+                <Text style={styles.amountDivider}> / {formatHydrationAmount(targetMl, unit)}</Text>
+              </Text>
+              <Text style={styles.dailyGoal}>Daily goal</Text>
+            </View>
+            <View style={[styles.statusBadge, isFull && styles.statusBadgeFull]}>
+              <View style={[styles.statusDot, isFull && styles.statusDotFull]} />
+              <Text style={[styles.statusText, isFull && styles.statusTextFull]}>
+                {isFull ? 'Fully Replenished' : 'On track'}
+              </Text>
             </View>
           </View>
 
           <View style={[styles.ringColumn, isCompactPhone && styles.ringColumnCompact]}>
             <KidneyProgressRing progress={progress} size={isCompactPhone ? 'compactHero' : 'hero'} />
-            <View style={styles.meterTicks}>
-              <View style={[styles.tick, percentComplete > 0 && styles.tickActive]} />
-              <View style={[styles.tick, percentComplete >= 50 && styles.tickActive]} />
-              <View style={[styles.tick, percentComplete >= 100 && styles.tickActive]} />
-            </View>
             <Text style={styles.remainingText}>
               {isFull
                 ? 'Goal Completed Today'
@@ -81,42 +82,32 @@ export function HydrationHeroCard({
 
 const styles = StyleSheet.create({
   card: {
-    borderColor: colors.border,
+    borderColor: colors.line,
     borderRadius: radius.xl,
     borderWidth: 1,
     overflow: 'hidden',
-    backgroundColor: colors.midnight,
+    backgroundColor: 'rgba(5, 24, 39, 0.96)',
     ...glassShadow,
   },
-  capsuleRail: {
+  heroGlow: {
     position: 'absolute',
-    left: -28,
-    top: 28,
-    width: 6,
-    height: 188,
-    borderRadius: 3,
-    backgroundColor: colors.cyan,
-    opacity: 0.7,
-  },
-  capsuleWash: {
-    position: 'absolute',
-    right: -56,
-    bottom: -46,
-    width: 190,
-    height: 92,
-    borderRadius: 46,
-    backgroundColor: colors.wash,
-    transform: [{ rotate: '-18deg' }],
+    right: -80,
+    top: -64,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: 'rgba(32, 199, 255, 0.13)',
   },
   content: {
-    gap: spacing.lg,
-    paddingBottom: spacing.lg,
+    gap: spacing.xl,
+    padding: spacing.lg,
+    paddingBottom: spacing.xl,
   },
   topRow: {
     alignItems: 'center',
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.sm,
+    gap: spacing.md,
     justifyContent: 'space-between',
   },
   topRowCompact: {
@@ -125,20 +116,22 @@ const styles = StyleSheet.create({
   progressLabelRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: spacing.md,
   },
-  dropIcon: {
-    width: 13,
-    height: 23,
-    borderColor: colors.cyan,
-    borderRadius: 8,
-    borderWidth: 2,
-    backgroundColor: 'rgba(32, 199, 255, 0.16)',
+  iconBubble: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 40,
+    height: 40,
+    borderColor: colors.line,
+    borderRadius: 20,
+    borderWidth: 1,
+    backgroundColor: 'rgba(32, 199, 255, 0.1)',
   },
   heroRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: spacing.lg,
   },
   heroRowCompact: {
     alignItems: 'stretch',
@@ -149,19 +142,16 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.text,
-    fontSize: 18,
-    fontWeight: '900',
+    ...typography.h1,
   },
   eyebrow: {
     color: colors.cyanSoft,
-    fontSize: 10,
-    fontWeight: '800',
+    ...typography.h2,
     letterSpacing: 0,
-    textTransform: 'uppercase',
   },
   metricColumn: {
     flex: 0.9,
-    gap: spacing.xs,
+    gap: spacing.md,
   },
   metricColumnCompact: {
     flexBasis: 'auto',
@@ -170,60 +160,70 @@ const styles = StyleSheet.create({
   },
   percent: {
     color: colors.text,
-    fontFamily: type.data,
-    fontWeight: '900',
+    fontFamily: type.display,
+    fontSize: 58,
+    fontWeight: '800',
+    letterSpacing: 0,
+    lineHeight: 64,
   },
   percentSymbol: {
     color: colors.cyan,
-    fontSize: 26,
-    fontWeight: '900',
+    fontSize: 25,
+    fontWeight: '700',
+  },
+  amountStack: {
+    gap: spacing.xs,
+  },
+  amountLabel: {
+    color: colors.muted,
+    ...typography.h2,
   },
   amountLine: {
-    color: colors.muted,
-    fontFamily: type.data,
-    fontWeight: '700',
+    color: colors.text,
+    ...typography.h1,
   },
   amountHighlight: {
     color: colors.cyan,
-    fontWeight: '900',
+  },
+  amountDivider: {
+    color: colors.muted,
   },
   dailyGoal: {
     color: colors.muted,
-    fontWeight: '600',
-    marginBottom: spacing.md,
+    ...typography.body1,
   },
-  statusBox: {
+  statusBadge: {
     alignItems: 'center',
     alignSelf: 'flex-start',
-    borderColor: colors.line,
-    borderRadius: radius.md,
-    borderWidth: 1,
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: spacing.xs,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.glass,
+    borderRadius: 999,
+    backgroundColor: 'rgba(32, 199, 255, 0.1)',
+  },
+  statusBadgeFull: {
+    backgroundColor: 'rgba(52, 232, 154, 0.12)',
   },
   statusDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
+    backgroundColor: colors.cyan,
+  },
+  statusDotFull: {
     backgroundColor: colors.green,
   },
   statusText: {
-    color: colors.green,
-    fontSize: 16,
-    fontWeight: '900',
+    color: colors.cyanSoft,
+    ...typography.h2,
   },
-  statusSubtext: {
-    width: '100%',
-    color: colors.text,
-    marginTop: 2,
+  statusTextFull: {
+    color: colors.green,
   },
   ringColumn: {
     alignItems: 'center',
-    flex: 1.22,
+    flex: 1.15,
   },
   ringColumnCompact: {
     flexBasis: 'auto',
@@ -232,23 +232,8 @@ const styles = StyleSheet.create({
   },
   remainingText: {
     color: colors.muted,
-    fontSize: 13,
-    fontWeight: '700',
-    marginTop: spacing.xs,
+    ...typography.body2,
+    marginTop: spacing.sm,
     textAlign: 'center',
-  },
-  meterTicks: {
-    flexDirection: 'row',
-    gap: 5,
-    marginTop: -spacing.sm,
-  },
-  tick: {
-    width: 18,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: colors.border,
-  },
-  tickActive: {
-    backgroundColor: colors.cyan,
   },
 });

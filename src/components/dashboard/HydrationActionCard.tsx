@@ -2,9 +2,11 @@ import { StyleSheet, View } from 'react-native';
 import { Card, Text } from 'react-native-paper';
 
 import { getDeviceNow, getLocalMinutes } from '@/src/features/hydration/deviceTime';
-import { formatHydrationAmount, type HydrationUnit } from '@/src/features/hydration/units';
 import type { HydrationCheckpoint } from '@/src/features/hydration/types';
-import { colors, glassShadow, radius, spacing, type } from '@/src/theme/tokens';
+import { formatHydrationAmount, type HydrationUnit } from '@/src/features/hydration/units';
+import { colors, glassShadow, radius, spacing, typography } from '@/src/theme/tokens';
+
+import { DashboardIcon, dashboardIcons } from './DashboardIcon';
 
 type HydrationActionCardProps = {
   checkpoint: HydrationCheckpoint | null;
@@ -22,147 +24,101 @@ export function HydrationActionCard({
   const currentMinutes = getLocalMinutes(now);
   const isMissed = checkpoint ? checkpoint.dueMinutes < currentMinutes && consumedMl < checkpoint.targetMl : false;
   const amountDueMl = checkpoint ? Math.max(checkpoint.targetMl - consumedMl, 0) : 0;
-  const minutesUntilDue = checkpoint
-    ? Math.max(checkpoint.dueMinutes - currentMinutes, 0)
-    : 0;
+  const minutesUntilDue = checkpoint ? Math.max(checkpoint.dueMinutes - currentMinutes, 0) : 0;
+  const title = checkpoint
+    ? isMissed
+      ? 'Missed hydration checkpoint'
+      : `Next hydration at ${checkpoint.timeLabel}`
+    : 'All checkpoints complete';
+  const message = checkpoint
+    ? isMissed
+      ? `Drink ${formatHydrationAmount(amountDueMl || 500, unit)} now to stay on track.`
+      : `You've got this. ${formatHydrationAmount(amountDueMl || checkpoint.targetMl, unit)} due in ${minutesUntilDue} min.`
+    : 'Keep the streak alive tomorrow.';
 
   return (
     <Card mode="contained" style={[styles.card, isMissed && styles.missedCard]}>
       <Card.Content style={styles.content}>
-        <View style={styles.titleRow}>
-          <View style={styles.icon} />
-          <Text style={styles.kicker}>{isMissed ? 'Missed Hydration' : 'Next Hydration'}</Text>
+        <View style={styles.iconBubble}>
+          <DashboardIcon
+            name={isMissed ? dashboardIcons.reminder : dashboardIcons.bell}
+            size={22}
+            color={isMissed ? colors.orange : colors.cyan}
+          />
         </View>
-        {checkpoint ? (
-          <>
-            <View style={styles.cardBody}>
-              <View style={styles.metricColumn}>
-                <Metric label="Next Drink" value={formatHydrationAmount(amountDueMl || 500, unit)} />
-                <Metric
-                  label={isMissed ? 'Was Due' : 'Due in'}
-                  value={isMissed ? checkpoint.timeLabel : `${minutesUntilDue} min`}
-                />
-              </View>
-              <View style={styles.dropRing}>
-                <View style={styles.drop} />
-              </View>
-            </View>
-            <Text style={styles.message}>
-              {isMissed
-                ? `You were supposed to drink ${formatHydrationAmount(amountDueMl || 500, unit)} at ${checkpoint.timeLabel}. Drink now to stay on track.`
-                : `Your next checkpoint is ${formatHydrationAmount(checkpoint.targetMl, unit)} by ${checkpoint.timeLabel}.`}
-            </Text>
-          </>
-        ) : (
-          <Text style={styles.message}>Your checkpoints are complete. Keep the streak alive tomorrow.</Text>
-        )}
+        <View style={styles.copy}>
+          <Text style={styles.kicker}>Next hydration</Text>
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.message}>{message}</Text>
+        </View>
+        <View style={[styles.statusPill, isMissed && styles.statusPillMissed]}>
+          <Text style={[styles.statusText, isMissed && styles.statusTextMissed]}>
+            {checkpoint ? (isMissed ? 'Drink now' : 'Reminder on') : 'Complete'}
+          </Text>
+        </View>
       </Card.Content>
     </Card>
   );
 }
 
-type MetricProps = {
-  label: string;
-  value: string;
-};
-
-function Metric({ label, value }: MetricProps) {
-  return (
-    <View style={styles.metric}>
-      <Text style={styles.metricLabel}>{label}</Text>
-      <Text style={styles.metricValue} variant="titleLarge">
-        {value}
-      </Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   card: {
-    flex: 1,
-    borderColor: colors.cyan,
-    borderRadius: radius.lg,
+    borderColor: colors.line,
+    borderRadius: radius.xl,
     borderWidth: 1,
-    minWidth: 180,
-    backgroundColor: colors.glass,
+    backgroundColor: 'rgba(10, 36, 55, 0.68)',
     ...glassShadow,
   },
   missedCard: {
-    borderColor: colors.orange,
-    backgroundColor: 'rgba(55, 31, 19, 0.92)',
+    borderColor: 'rgba(255, 178, 87, 0.38)',
+    backgroundColor: 'rgba(46, 31, 19, 0.74)',
   },
   content: {
-    gap: spacing.md,
-  },
-  titleRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  icon: {
-    width: 18,
-    height: 18,
-    borderColor: colors.cyan,
-    borderRadius: 9,
-    borderWidth: 2,
-    borderLeftColor: 'transparent',
-  },
-  kicker: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: '900',
-  },
-  cardBody: {
     alignItems: 'center',
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.md,
+    padding: spacing.lg,
   },
-  metricColumn: {
-    flex: 1,
-    gap: spacing.sm,
-  },
-  metric: {
-    borderRadius: radius.md,
-    backgroundColor: 'transparent',
-  },
-  metricLabel: {
-    color: colors.muted,
-    fontSize: 12,
-  },
-  metricValue: {
-    color: colors.text,
-    fontFamily: type.data,
-    fontSize: 20,
-    fontWeight: '900',
-  },
-  dropRing: {
+  iconBubble: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 88,
-    height: 88,
-    flexShrink: 0,
-    borderColor: colors.line,
-    borderRadius: 44,
-    borderWidth: 6,
-    backgroundColor: 'rgba(3, 16, 28, 0.74)',
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: 'rgba(32, 199, 255, 0.1)',
   },
-  drop: {
-    width: 28,
-    height: 40,
-    borderColor: colors.cyan,
-    borderRadius: 16,
-    borderWidth: 3,
-    backgroundColor: 'rgba(32, 199, 255, 0.22)',
+  copy: {
+    flex: 1,
+    gap: spacing.xs,
+    minWidth: 170,
+  },
+  kicker: {
+    color: colors.muted,
+    ...typography.h2,
+  },
+  title: {
+    color: colors.text,
+    ...typography.h1,
   },
   message: {
-    borderColor: colors.line,
-    borderRadius: radius.md,
-    borderWidth: 1,
     color: colors.muted,
-    lineHeight: 21,
-    padding: spacing.sm,
-    backgroundColor: 'rgba(3, 16, 28, 0.46)',
+    ...typography.body1,
+  },
+  statusPill: {
+    borderRadius: 999,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: 'rgba(32, 199, 255, 0.1)',
+  },
+  statusPillMissed: {
+    backgroundColor: 'rgba(255, 178, 87, 0.14)',
+  },
+  statusText: {
+    color: colors.cyanSoft,
+    ...typography.h2,
+  },
+  statusTextMissed: {
+    color: colors.orange,
   },
 });

@@ -18,7 +18,7 @@ import { scheduleCheckpointReminders } from '@/src/features/reminders/reminderSe
 import { useHydrationStore } from '@/src/store/hydrationStore';
 import { useProfileStore } from '@/src/store/profileStore';
 import { useReminderStore } from '@/src/store/reminderStore';
-import { colors, glassShadow, radius, spacing, type } from '@/src/theme/tokens';
+import { colors, glassShadow, radius, spacing, typography } from '@/src/theme/tokens';
 
 const activityOptions: { label: string; value: ActivityLevel }[] = [
   { label: 'Light', value: 'light' },
@@ -535,15 +535,16 @@ const styles = StyleSheet.create({
   },
   kicker: {
     color: colors.cyan,
+    ...typography.h2,
     letterSpacing: 0,
   },
   title: {
     color: colors.text,
-    fontFamily: type.data,
-    fontWeight: '800',
+    ...typography.h1,
   },
   subtitle: {
     color: colors.muted,
+    ...typography.body1,
     textAlign: 'center',
   },
   progress: {
@@ -564,15 +565,15 @@ const styles = StyleSheet.create({
   },
   stepEyebrow: {
     color: colors.orange,
-    fontWeight: '800',
+    ...typography.h2,
   },
   stepTitle: {
     color: colors.text,
-    fontWeight: '800',
+    ...typography.h1,
   },
   stepHelper: {
     color: colors.muted,
-    lineHeight: 21,
+    ...typography.body1,
   },
   fieldStack: {
     gap: spacing.md,
@@ -582,6 +583,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     color: colors.muted,
+    ...typography.h2,
   },
   input: {
     backgroundColor: colors.panel,
@@ -591,10 +593,11 @@ const styles = StyleSheet.create({
   },
   warning: {
     color: colors.orange,
+    ...typography.body1,
   },
   success: {
     color: colors.green,
-    fontWeight: '700',
+    ...typography.h2,
   },
   goalPreview: {
     borderColor: colors.border,
@@ -606,8 +609,7 @@ const styles = StyleSheet.create({
   },
   goalText: {
     color: colors.cyan,
-    fontFamily: type.data,
-    fontWeight: '800',
+    ...typography.h1,
     textAlign: 'center',
   },
   timeRow: {
@@ -634,6 +636,7 @@ const styles = StyleSheet.create({
   },
   consentText: {
     color: colors.text,
+    ...typography.body1,
     flex: 1,
     textAlign: 'left',
   },

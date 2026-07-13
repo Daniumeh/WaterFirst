@@ -1,7 +1,9 @@
 import { StyleSheet, View } from 'react-native';
 import { Card, Text } from 'react-native-paper';
 
-import { colors, glassShadow, radius, spacing, type } from '@/src/theme/tokens';
+import { colors, glassShadow, radius, spacing, typography } from '@/src/theme/tokens';
+
+import { DashboardIcon, dashboardIcons } from './DashboardIcon';
 
 type SoftLockStatusCardProps = {
   enabled: boolean;
@@ -19,31 +21,22 @@ export function SoftLockStatusCard({
       <Card.Content style={styles.content}>
         <View style={styles.headerRow}>
           <View style={styles.titleRow}>
-            <View style={styles.icon} />
-            <Text style={styles.title} variant="titleLarge">
-              Soft Lock
-            </Text>
+            <View style={styles.iconBubble}>
+              <DashboardIcon name={dashboardIcons.lock} size={21} color={colors.cyan} />
+            </View>
+            <View>
+              <Text style={styles.kicker}>Accountability</Text>
+              <Text style={styles.title}>Soft Lock: {enabled ? 'ON' : 'OFF'}</Text>
+            </View>
           </View>
           <View style={[styles.toggle, !enabled && styles.toggleOff]}>
-            <View style={styles.toggleKnob} />
+            <View style={[styles.toggleKnob, !enabled && styles.toggleKnobOff]} />
           </View>
         </View>
 
-        <Text style={styles.statusLine}>
-          Soft Lock: <Text style={styles.statusText}>{enabled ? 'ON' : 'OFF'}</Text>
-        </Text>
-        <View style={styles.bodyRow}>
-          <View style={styles.metricStack}>
-            <InfoBlock label="Next Enforcement" value={nextEnforcementTime} />
-            <View style={styles.separator} />
-            <InfoBlock label="Compliance Score" value={`${complianceScore}%`} />
-          </View>
-          <View style={styles.shield}>
-            <View style={styles.lockBody}>
-              <View style={styles.lockShackle} />
-              <View style={styles.lockPlate} />
-            </View>
-          </View>
+        <View style={styles.metricsRow}>
+          <InfoBlock label="Next Enforcement" value={nextEnforcementTime} />
+          <InfoBlock label="Compliance Score" value={`${complianceScore}%`} accent />
         </View>
       </Card.Content>
     </Card>
@@ -51,57 +44,60 @@ export function SoftLockStatusCard({
 }
 
 type InfoBlockProps = {
+  accent?: boolean;
   label: string;
   value: string;
 };
 
-function InfoBlock({ label, value }: InfoBlockProps) {
+function InfoBlock({ accent, label, value }: InfoBlockProps) {
   return (
     <View style={styles.infoBlock}>
       <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue}>{value}</Text>
+      <Text style={[styles.infoValue, accent && styles.infoValueAccent]}>{value}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    flex: 1,
-    borderColor: colors.border,
-    borderRadius: radius.lg,
+    borderColor: colors.line,
+    borderRadius: radius.xl,
     borderWidth: 1,
-    minWidth: 180,
-    backgroundColor: colors.glass,
+    backgroundColor: 'rgba(10, 36, 55, 0.62)',
     ...glassShadow,
   },
   content: {
-    gap: spacing.md,
+    gap: spacing.lg,
+    padding: spacing.lg,
   },
   headerRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
+    gap: spacing.md,
     justifyContent: 'space-between',
   },
   titleRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    flexShrink: 1,
-    flexWrap: 'wrap',
-    gap: spacing.sm,
+    flex: 1,
+    gap: spacing.md,
   },
-  icon: {
-    width: 18,
-    height: 22,
-    borderColor: colors.cyan,
-    borderRadius: 7,
-    borderWidth: 2,
-    backgroundColor: 'rgba(32, 199, 255, 0.12)',
+  iconBubble: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(32, 199, 255, 0.1)',
+  },
+  kicker: {
+    color: colors.muted,
+    ...typography.h2,
   },
   title: {
     color: colors.text,
-    fontWeight: '900',
+    ...typography.h1,
+    marginTop: 2,
   },
   toggle: {
     alignItems: 'flex-end',
@@ -113,7 +109,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cyan,
   },
   toggleOff: {
-    backgroundColor: colors.border,
+    alignItems: 'flex-start',
+    backgroundColor: 'rgba(97, 127, 149, 0.34)',
   },
   toggleKnob: {
     width: 22,
@@ -121,74 +118,32 @@ const styles = StyleSheet.create({
     borderRadius: 11,
     backgroundColor: colors.text,
   },
-  statusLine: {
-    color: colors.text,
-    fontSize: 20,
-    fontWeight: '900',
+  toggleKnobOff: {
+    backgroundColor: colors.muted,
   },
-  statusText: {
-    color: colors.cyan,
-    fontWeight: '900',
-  },
-  bodyRow: {
-    alignItems: 'center',
+  metricsRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-  },
-  metricStack: {
-    flex: 1,
     gap: spacing.sm,
   },
   infoBlock: {
-    borderRadius: radius.md,
-    backgroundColor: 'transparent',
+    flex: 1,
+    minWidth: 0,
+    gap: spacing.xs,
+    borderColor: colors.line,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    padding: spacing.md,
+    backgroundColor: 'rgba(3, 16, 28, 0.32)',
   },
   infoLabel: {
     color: colors.muted,
-    fontSize: 12,
+    ...typography.h2,
   },
   infoValue: {
+    color: colors.text,
+    ...typography.h1,
+  },
+  infoValueAccent: {
     color: colors.cyan,
-    fontFamily: type.data,
-    fontSize: 20,
-    fontWeight: '900',
-  },
-  separator: {
-    height: 1,
-    backgroundColor: colors.line,
-  },
-  shield: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 72,
-    height: 84,
-    flexShrink: 0,
-    borderColor: colors.cyanSoft,
-    borderRadius: radius.lg,
-    borderWidth: 2,
-    backgroundColor: 'rgba(20, 125, 255, 0.16)',
-  },
-  lockBody: {
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    width: 38,
-    height: 44,
-  },
-  lockShackle: {
-    position: 'absolute',
-    top: 0,
-    width: 24,
-    height: 24,
-    borderColor: colors.cyanSoft,
-    borderRadius: 12,
-    borderWidth: 4,
-    borderBottomWidth: 0,
-  },
-  lockPlate: {
-    width: 34,
-    height: 27,
-    borderRadius: radius.sm,
-    backgroundColor: colors.blue,
   },
 });

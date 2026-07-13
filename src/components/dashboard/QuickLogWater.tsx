@@ -1,237 +1,268 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { Button, Card, Text, TextInput } from 'react-native-paper';
 
-import { unitToMl } from '@/src/features/hydration/units';
-import { colors, glassShadow, radius, spacing, type } from '@/src/theme/tokens';
+import {
+  formatHydrationAmount,
+  unitToMl,
+  type HydrationUnit,
+} from '@/src/features/hydration/units';
+import { colors, radius, spacing, typography } from '@/src/theme/tokens';
+
+import { DashboardIcon, dashboardIcons } from './DashboardIcon';
+
+const sachetWaterImage = require('../../../assets/images/sachet-water-50cl.png');
+const bottleWater75clImage = require('../../../assets/images/bottle-water-75cl.png');
+const bottleWater150clImage = require('../../../assets/images/bottle-water-150cl.png');
 
 type QuickLogWaterProps = {
   customAmount: string;
   onCustomAmountChange: (amount: string) => void;
   onLog: (amountMl: number) => void;
+  unit: HydrationUnit;
 };
 
-const quickAmountsCl = [25, 50, 75, 100];
-const waterOptions = [
-  { label: 'Sachet Water', amountCl: 50 },
-  { label: 'Small Bottle', amountCl: 50 },
-  { label: 'Medium Bottle', amountCl: 75 },
-  { label: 'Large Bottle', amountCl: 150 },
-];
+const quickAmountsMl = [500, 750, 1500];
 
 export function QuickLogWater({
   customAmount,
   onCustomAmountChange,
   onLog,
+  unit,
 }: QuickLogWaterProps) {
+  const [customVisible, setCustomVisible] = useState(false);
+
   return (
     <Card mode="contained" style={styles.card}>
       <Card.Content style={styles.content}>
-        <View>
-          <View style={styles.titleRow}>
-            <View style={styles.waterIcon} />
-            <Text style={styles.title} variant="titleLarge">
-              Quick Log Water
-            </Text>
-            <Text style={styles.more}>More Options ›</Text>
-          </View>
-        </View>
+        <Text style={styles.title}>Quick Log Water</Text>
 
-        <View style={styles.amountGrid}>
-          {quickAmountsCl.map((amountCl) => (
+        <View style={styles.amountRow}>
+          {quickAmountsMl.map((amountMl) => (
             <Pressable
-              key={amountCl}
+              key={amountMl}
               accessibilityRole="button"
-              accessibilityLabel={`+${amountCl}cl`}
-              style={styles.quickButton}
-              onPress={() => onLog(unitToMl(amountCl, 'cl'))}
+              accessibilityLabel={`Add ${formatHydrationAmount(amountMl, unit)}`}
+              style={({ pressed }) => [styles.quickTile, pressed && styles.pressedTile]}
+              onPress={() => onLog(amountMl)}
             >
-              <View style={styles.bottleIcon} />
-              <Text style={styles.quickText}>+{amountCl}cl</Text>
+              <WaterOptionIcon amountMl={amountMl} />
+              <Text style={styles.quickText}>+{formatHydrationAmount(amountMl, unit)}</Text>
             </Pressable>
           ))}
-          <Pressable accessibilityRole="button" accessibilityLabel="Custom Amount" style={styles.quickButton}>
-            <Text style={styles.bottleIcon}>✎</Text>
+
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Custom Amount"
+            style={({ pressed }) => [styles.quickTile, pressed && styles.pressedTile]}
+            onPress={() => setCustomVisible((visible) => !visible)}
+          >
+            <View style={styles.customIconWrap}>
+              <DashboardIcon name={dashboardIcons.droplet} size={30} color={colors.cyan} />
+              <View style={styles.plusBadge}>
+                <Text style={styles.plusText}>+</Text>
+              </View>
+            </View>
             <Text style={styles.quickText}>Custom</Text>
           </Pressable>
         </View>
 
-        <View style={styles.dividerRow}>
-          <Text style={styles.subtitle}>Common Water Options</Text>
-          <View style={styles.divider} />
-        </View>
-
-        <View style={styles.optionGrid}>
-          {waterOptions.map((option) => (
-            <Pressable
-              key={option.label}
-              accessibilityRole="button"
-              accessibilityLabel={`${option.label} ${option.amountCl}cl`}
-              style={styles.optionButton}
-              onPress={() => onLog(unitToMl(option.amountCl, 'cl'))}
+        {customVisible ? (
+          <View style={styles.customRow}>
+            <TextInput
+              keyboardType="numeric"
+              label={`Custom amount (${unit})`}
+              mode="outlined"
+              activeOutlineColor={colors.cyan}
+              outlineColor={colors.line}
+              placeholderTextColor={colors.faint}
+              style={styles.input}
+              textColor={colors.text}
+              value={customAmount}
+              onChangeText={onCustomAmountChange}
+            />
+            <Button
+              mode="contained"
+              style={styles.customButton}
+              contentStyle={styles.customButtonContent}
+              onPress={() => {
+                const amount = Number(customAmount);
+                if (amount > 0) {
+                  onLog(unitToMl(amount, unit));
+                  onCustomAmountChange('');
+                  setCustomVisible(false);
+                }
+              }}
             >
-              <View style={[styles.optionIcon, option.label === 'Sachet Water' && styles.sachetIcon]} />
-              <View>
-                <Text style={styles.optionLabel}>{option.label}</Text>
-                <Text style={styles.optionAmount}>{option.amountCl}cl</Text>
-              </View>
-            </Pressable>
-          ))}
-        </View>
-
-        <View style={styles.customRow}>
-          <TextInput
-            keyboardType="numeric"
-            label="Custom Amount (cl)"
-            mode="outlined"
-            style={styles.input}
-            value={customAmount}
-            onChangeText={onCustomAmountChange}
-          />
-          <Button
-            mode="contained"
-            style={styles.customButton}
-            onPress={() => {
-              const amount = Number(customAmount);
-              if (amount > 0) {
-                onLog(unitToMl(amount, 'cl'));
-                onCustomAmountChange('');
-              }
-            }}
-          >
-            Log
-          </Button>
-        </View>
+              Log
+            </Button>
+          </View>
+        ) : null}
       </Card.Content>
     </Card>
   );
 }
 
+type WaterOptionIconProps = {
+  amountMl: number;
+};
+
+function WaterOptionIcon({ amountMl }: WaterOptionIconProps) {
+  if (amountMl === 500) {
+    return <Image source={sachetWaterImage} style={styles.sachetImage} resizeMode="contain" />;
+  }
+
+  if (amountMl === 750) {
+    return <Image source={bottleWater75clImage} style={styles.bottleImage75cl} resizeMode="contain" />;
+  }
+
+  if (amountMl === 1500) {
+    return <Image source={bottleWater150clImage} style={styles.bottleImage150cl} resizeMode="contain" />;
+  }
+
+  return (
+    <View style={[styles.bottleIcon, amountMl >= 1000 && styles.largeBottleIcon]}>
+      <View style={styles.bottleCap} />
+      <View style={styles.bottleNeck} />
+      <View style={styles.bottleWater} />
+      {amountMl >= 750 ? <View style={styles.bottleRibOne} /> : null}
+      {amountMl >= 1000 ? <View style={styles.bottleRibTwo} /> : null}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   card: {
-    borderColor: colors.border,
-    borderRadius: radius.lg,
+    borderColor: colors.line,
+    borderRadius: 18,
     borderWidth: 1,
     backgroundColor: colors.glass,
-    ...glassShadow,
   },
   content: {
     gap: spacing.md,
-  },
-  titleRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  waterIcon: {
-    width: 12,
-    height: 20,
-    borderColor: colors.cyan,
-    borderRadius: 7,
-    borderWidth: 2,
-    backgroundColor: 'rgba(32, 199, 255, 0.18)',
+    padding: spacing.md,
   },
   title: {
-    flex: 1,
     color: colors.text,
-    fontSize: 19,
-    fontWeight: '800',
+    ...typography.h1,
   },
-  more: {
-    color: colors.cyanSoft,
-    flexShrink: 0,
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  subtitle: {
-    color: colors.muted,
-  },
-  amountGrid: {
+  amountRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: spacing.sm,
   },
-  quickButton: {
+  quickTile: {
     alignItems: 'center',
-    borderRadius: radius.md,
-    borderColor: colors.line,
+    borderColor: 'rgba(120, 230, 255, 0.18)',
+    borderRadius: 14,
     borderWidth: 1,
-    flexDirection: 'row',
-    gap: spacing.xs,
-    flexBasis: 92,
-    flexGrow: 1,
+    flex: 1,
+    gap: spacing.sm,
     justifyContent: 'center',
-    minHeight: 52,
+    minHeight: 78,
     minWidth: 0,
-    paddingHorizontal: spacing.sm,
-    backgroundColor: colors.glassStrong,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.sm,
+    backgroundColor: 'rgba(17, 52, 76, 0.72)',
   },
-  bottleIcon: {
-    width: 9,
-    height: 24,
+  pressedTile: {
     borderColor: colors.cyan,
-    borderRadius: 4,
-    borderWidth: 2,
-    backgroundColor: 'rgba(20, 125, 255, 0.22)',
+    backgroundColor: 'rgba(32, 199, 255, 0.14)',
   },
   quickText: {
     color: colors.text,
-    fontFamily: type.data,
-    fontSize: 17,
-    fontWeight: '900',
+    ...typography.h2,
+    textAlign: 'center',
   },
-  dividerRow: {
+  sachetImage: {
+    width: 46,
+    height: 34,
+  },
+  bottleImage75cl: {
+    width: 28,
+    height: 45,
+  },
+  bottleImage150cl: {
+    width: 31,
+    height: 48,
+  },
+  bottleIcon: {
     alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  divider: {
-    flex: 1,
-    height: 1,
-    backgroundColor: colors.line,
-  },
-  optionGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  optionButton: {
-    alignItems: 'center',
-    borderColor: colors.line,
-    borderWidth: 1,
-    borderRadius: radius.md,
-    flexDirection: 'row',
-    gap: spacing.sm,
-    flexBasis: 136,
-    flexGrow: 1,
-    minHeight: 72,
-    minWidth: 0,
-    padding: spacing.sm,
-    backgroundColor: colors.glassStrong,
-  },
-  optionIcon: {
-    width: 16,
+    justifyContent: 'flex-end',
+    width: 18,
     height: 34,
     borderColor: colors.cyan,
     borderRadius: 6,
     borderWidth: 2,
-    backgroundColor: 'rgba(32, 199, 255, 0.15)',
+    backgroundColor: colors.wash,
   },
-  sachetIcon: {
-    width: 23,
-    borderRadius: 4,
-    transform: [{ skewX: '-8deg' }],
+  largeBottleIcon: {
+    width: 21,
+    height: 38,
+    borderRadius: 7,
   },
-  optionLabel: {
-    color: colors.text,
-    fontSize: 13,
-    fontWeight: '800',
+  bottleCap: {
+    position: 'absolute',
+    top: -6,
+    width: 8,
+    height: 5,
+    borderRadius: 2,
+    backgroundColor: colors.blue,
   },
-  optionAmount: {
-    color: colors.cyanSoft,
-    fontFamily: type.data,
-    fontSize: 13,
-    marginTop: 2,
+  bottleNeck: {
+    position: 'absolute',
+    top: -1,
+    width: 9,
+    height: 8,
+    borderColor: colors.cyan,
+    borderLeftWidth: 2,
+    borderRightWidth: 2,
+    backgroundColor: colors.card,
+  },
+  bottleWater: {
+    width: '100%',
+    height: '48%',
+    borderBottomLeftRadius: 4,
+    borderBottomRightRadius: 4,
+    backgroundColor: 'rgba(32, 199, 255, 0.62)',
+  },
+  bottleRibOne: {
+    position: 'absolute',
+    bottom: 13,
+    width: '86%',
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: 'rgba(120, 230, 255, 0.42)',
+  },
+  bottleRibTwo: {
+    position: 'absolute',
+    bottom: 20,
+    width: '86%',
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: 'rgba(120, 230, 255, 0.42)',
+  },
+  customIconWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 38,
+    height: 38,
+  },
+  plusBadge: {
+    alignItems: 'center',
+    bottom: 2,
+    justifyContent: 'center',
+    position: 'absolute',
+    right: 1,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: colors.blue,
+  },
+  plusText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+    lineHeight: 13,
   },
   customRow: {
     alignItems: 'center',
@@ -242,13 +273,15 @@ const styles = StyleSheet.create({
   input: {
     flexBasis: 180,
     flex: 1,
-    backgroundColor: colors.panel,
+    backgroundColor: 'rgba(3, 16, 28, 0.78)',
   },
   customButton: {
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     flexGrow: 1,
-    minHeight: 44,
-    minWidth: 88,
+    minWidth: 92,
     backgroundColor: colors.blue,
+  },
+  customButtonContent: {
+    minHeight: 52,
   },
 });

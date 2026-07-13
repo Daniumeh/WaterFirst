@@ -13,7 +13,7 @@ import {
 import { formatHydrationAmount, type HydrationUnit } from '@/src/features/hydration/units';
 import type { HydrationLog } from '@/src/features/hydration/types';
 import { useHydrationStore } from '@/src/store/hydrationStore';
-import { colors, glassShadow, radius, spacing, type } from '@/src/theme/tokens';
+import { colors, glassShadow, radius, spacing, typography } from '@/src/theme/tokens';
 
 type CalendarDay = {
   date: Date;
@@ -371,14 +371,13 @@ const styles = StyleSheet.create({
   },
   kicker: {
     color: colors.cyanSoft,
-    fontSize: 11,
-    fontWeight: '800',
+    ...typography.h2,
     letterSpacing: 0,
     textTransform: 'uppercase',
   },
   title: {
     color: colors.text,
-    fontWeight: '900',
+    ...typography.h1,
   },
   calendarCard: {
     borderColor: colors.border,
@@ -408,15 +407,12 @@ const styles = StyleSheet.create({
   },
   monthButtonText: {
     color: colors.cyan,
-    fontFamily: type.data,
-    fontSize: 18,
-    fontWeight: '900',
+    ...typography.h1,
   },
   monthTitle: {
     color: colors.text,
     flex: 1,
-    fontSize: 18,
-    fontWeight: '900',
+    ...typography.h1,
     textAlign: 'center',
   },
   weekRow: {
@@ -426,9 +422,7 @@ const styles = StyleSheet.create({
   weekDay: {
     color: colors.muted,
     flex: 1,
-    fontFamily: type.data,
-    fontSize: 12,
-    fontWeight: '900',
+    ...typography.h2,
     textAlign: 'center',
   },
   calendarGrid: {
@@ -515,9 +509,7 @@ const styles = StyleSheet.create({
   },
   dayNumber: {
     color: colors.text,
-    fontFamily: type.data,
-    fontSize: 13,
-    fontWeight: '900',
+    ...typography.h2,
   },
   selectedDayNumber: {
     color: colors.cyanSoft,
@@ -530,9 +522,7 @@ const styles = StyleSheet.create({
   },
   dayPercent: {
     color: colors.muted,
-    fontFamily: type.data,
-    fontSize: 9,
-    fontWeight: '800',
+    ...typography.body2,
     textAlign: 'center',
   },
   summaryCard: {
@@ -553,8 +543,7 @@ const styles = StyleSheet.create({
   },
   summaryTitle: {
     color: colors.text,
-    fontSize: 20,
-    fontWeight: '900',
+    ...typography.h1,
   },
   summaryBadge: {
     alignItems: 'center',
@@ -569,8 +558,7 @@ const styles = StyleSheet.create({
   },
   summaryBadgeText: {
     color: colors.cyan,
-    fontFamily: type.data,
-    fontWeight: '900',
+    ...typography.h2,
   },
   summaryGrid: {
     flexDirection: 'row',
@@ -589,22 +577,18 @@ const styles = StyleSheet.create({
   },
   metricValue: {
     color: colors.text,
-    fontFamily: type.data,
-    fontSize: 18,
-    fontWeight: '900',
+    ...typography.h1,
   },
   metricLabel: {
     color: colors.muted,
-    fontSize: 11,
-    fontWeight: '700',
+    ...typography.body2,
   },
   message: {
     borderColor: colors.line,
     borderRadius: radius.md,
     borderWidth: 1,
     color: colors.cyanSoft,
-    fontWeight: '800',
-    lineHeight: 21,
+    ...typography.h2,
     padding: spacing.md,
     backgroundColor: 'rgba(3, 16, 28, 0.48)',
   },
@@ -613,11 +597,11 @@ const styles = StyleSheet.create({
   },
   logTitle: {
     color: colors.text,
-    fontWeight: '900',
+    ...typography.h1,
   },
   emptyText: {
     color: colors.muted,
-    lineHeight: 21,
+    ...typography.body1,
   },
   logRow: {
     alignItems: 'center',
@@ -632,11 +616,10 @@ const styles = StyleSheet.create({
   },
   logAmount: {
     color: colors.cyan,
-    fontFamily: type.data,
-    fontWeight: '900',
+    ...typography.h2,
   },
   logTime: {
     color: colors.muted,
-    fontWeight: '700',
+    ...typography.body2,
   },
 });

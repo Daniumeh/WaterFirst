@@ -1,7 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 
-import { colors, spacing, type } from '@/src/theme/tokens';
+import { colors, radius, spacing, typography } from '@/src/theme/tokens';
 
 type StatsCardProps = {
   label: string;
@@ -23,28 +23,23 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     minWidth: 0,
-    alignItems: 'center',
     gap: spacing.xs,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.md,
-    backgroundColor: 'rgba(8, 31, 49, 0.58)',
+    borderColor: colors.line,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    padding: spacing.md,
+    backgroundColor: 'rgba(3, 16, 28, 0.32)',
   },
   label: {
     color: colors.muted,
-    fontSize: 11,
-    textAlign: 'center',
+    ...typography.h2,
   },
   value: {
     color: colors.text,
-    fontFamily: type.data,
-    fontSize: 21,
-    fontWeight: '900',
-    textAlign: 'center',
+    ...typography.h1,
   },
   helper: {
     color: colors.cyanSoft,
-    fontFamily: type.data,
-    fontSize: 12,
-    fontWeight: '700',
+    ...typography.body2,
   },
 });

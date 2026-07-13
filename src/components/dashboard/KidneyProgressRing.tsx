@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 
-import { colors, shadow, spacing } from '@/src/theme/tokens';
+import { colors, shadow, spacing, typography } from '@/src/theme/tokens';
 
 type KidneyProgressRingProps = {
   progress: number;
@@ -65,7 +65,7 @@ export function KidneyProgressRing({ progress, size = 'hero' }: KidneyProgressRi
             <KidneyLobe side="left" waterTop={waterTop} />
             <KidneyLobe side="right" waterTop={waterTop} />
           </View>
-          {size === 'hero' ? <Text style={styles.centerLabel}>Keep Going!</Text> : null}
+          {size === 'hero' ? <Text style={styles.centerLabel}>Keep going</Text> : null}
         </View>
       </View>
     </View>
@@ -105,12 +105,12 @@ const styles = StyleSheet.create({
   ringOuter: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 188,
-    height: 188,
-    borderRadius: 94,
-    borderWidth: 10,
-    borderColor: colors.cyan,
-    backgroundColor: '#041423',
+    width: 198,
+    height: 198,
+    borderRadius: 99,
+    borderWidth: 9,
+    borderColor: 'rgba(32, 199, 255, 0.86)',
+    backgroundColor: 'rgba(4, 20, 35, 0.92)',
     ...shadow,
   },
   ringOuterCompact: {
@@ -132,8 +132,8 @@ const styles = StyleSheet.create({
     height: 150,
     borderRadius: 75,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: '#061524',
+    borderColor: colors.line,
+    backgroundColor: 'rgba(6, 21, 36, 0.9)',
   },
   ringInnerCompact: {
     width: 132,
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
     height: 82,
     borderWidth: 2,
     borderColor: 'rgba(136, 195, 255, 0.95)',
-    backgroundColor: 'rgba(33, 55, 80, 0.72)',
+    backgroundColor: 'rgba(33, 55, 80, 0.62)',
     shadowColor: colors.cyan,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.8,
@@ -377,8 +377,7 @@ const styles = StyleSheet.create({
   },
   centerLabel: {
     color: colors.text,
-    fontSize: 14,
-    fontWeight: '900',
+    ...typography.h2,
     marginTop: spacing.sm,
   },
 });

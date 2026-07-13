@@ -5,7 +5,7 @@ import { Button, Text, TextInput } from 'react-native-paper';
 
 import { requestPasswordReset } from '@/src/features/auth/authService';
 import { hasSupabaseConfig } from '@/src/lib/supabase';
-import { colors, glassShadow, radius, spacing, type } from '@/src/theme/tokens';
+import { colors, glassShadow, radius, spacing, typography } from '@/src/theme/tokens';
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
@@ -177,16 +177,17 @@ const styles = StyleSheet.create({
   },
   kicker: {
     color: colors.cyan,
+    ...typography.h2,
     letterSpacing: 0,
   },
   title: {
     color: colors.text,
-    fontFamily: type.data,
-    fontWeight: '800',
+    ...typography.h1,
     textAlign: 'center',
   },
   subtitle: {
     color: colors.muted,
+    ...typography.body1,
     textAlign: 'center',
   },
   card: {
@@ -200,21 +201,22 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     color: colors.text,
-    fontWeight: '800',
+    ...typography.h1,
   },
   cardHelper: {
     color: colors.muted,
-    lineHeight: 21,
+    ...typography.body1,
   },
   input: {
     backgroundColor: colors.panel,
   },
   warning: {
     color: colors.orange,
+    ...typography.body1,
   },
   success: {
     color: colors.green,
-    lineHeight: 21,
+    ...typography.body1,
   },
   primaryButton: {
     borderRadius: radius.md,

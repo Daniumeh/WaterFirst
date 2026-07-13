@@ -1,5 +1,6 @@
 import type { Session, User } from '@supabase/supabase-js';
 import * as Linking from 'expo-linking';
+import { Platform } from 'react-native';
 
 import type { HydrationProfile } from '@/src/features/hydration/types';
 import { supabase } from '@/src/lib/supabase';
@@ -21,8 +22,18 @@ type SignInWithEmailInput = {
   password: string;
 };
 
-function getResetRedirectUrl() {
-  return Linking.createURL('/reset-password');
+export function getResetRedirectUrl() {
+  const configuredRedirectUrl = process.env.EXPO_PUBLIC_PASSWORD_RESET_REDIRECT_URL;
+
+  if (configuredRedirectUrl) {
+    return configuredRedirectUrl;
+  }
+
+  if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location.origin) {
+    return `${window.location.origin}/reset-password`;
+  }
+
+  return Linking.createURL('reset-password');
 }
 
 function readAuthRedirectParams(url: string) {

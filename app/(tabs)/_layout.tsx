@@ -1,12 +1,13 @@
-import { SymbolView } from 'expo-symbols';
 import { Redirect, Tabs } from 'expo-router';
 
+import { DashboardIcon, dashboardIcons } from '@/src/components/dashboard/DashboardIcon';
 import {
   bottomNavigationColors,
   bottomNavigationStyle,
 } from '@/src/components/dashboard/BottomNavigation';
 import { useProfileStore } from '@/src/store/profileStore';
 import { hydraLockTheme } from '@/src/theme/paperTheme';
+import { typography } from '@/src/theme/tokens';
 
 export default function TabLayout() {
   const onboardingComplete = useProfileStore((state) => state.profile.onboardingComplete);
@@ -24,22 +25,15 @@ export default function TabLayout() {
         headerShown: false,
         headerStyle: { backgroundColor: '#061B2E' },
         headerTintColor: hydraLockTheme.colors.onSurface,
-        headerTitleStyle: { fontWeight: '700' },
+        headerTitleStyle: typography.h1,
+        tabBarLabelStyle: typography.body2,
       }}>
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Dashboard',
+          title: 'Home',
           tabBarIcon: ({ color }) => (
-            <SymbolView
-              name={{
-                ios: 'drop.fill',
-                android: 'water_drop',
-                web: 'water_drop',
-              }}
-              tintColor={color}
-              size={28}
-            />
+            <DashboardIcon name={dashboardIcons.home} color={color} size={25} />
           ),
         }}
       />
@@ -48,50 +42,14 @@ export default function TabLayout() {
         options={{
           title: 'History',
           tabBarIcon: ({ color }) => (
-            <SymbolView
-              name={{
-                ios: 'chart.bar.fill',
-                android: 'bar_chart',
-                web: 'bar_chart',
-              }}
-              tintColor={color}
-              size={28}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="challenges"
-        options={{
-          title: 'Challenges',
-          tabBarIcon: ({ color }) => (
-            <SymbolView
-              name={{
-                ios: 'target',
-                android: 'emoji_events',
-                web: 'emoji_events',
-              }}
-              tintColor={color}
-              size={28}
-            />
+            <DashboardIcon name={dashboardIcons.history} color={color} size={25} />
           ),
         }}
       />
       <Tabs.Screen
         name="reminders"
         options={{
-          title: 'Reminders',
-          tabBarIcon: ({ color }) => (
-            <SymbolView
-              name={{
-                ios: 'bell.fill',
-                android: 'notifications',
-                web: 'notifications',
-              }}
-              tintColor={color}
-              size={28}
-            />
-          ),
+          href: null,
         }}
       />
       <Tabs.Screen
@@ -99,15 +57,7 @@ export default function TabLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color }) => (
-            <SymbolView
-              name={{
-                ios: 'person.crop.circle.fill',
-                android: 'person',
-                web: 'person',
-              }}
-              tintColor={color}
-              size={28}
-            />
+            <DashboardIcon name={dashboardIcons.profile} color={color} size={25} />
           ),
         }}
       />

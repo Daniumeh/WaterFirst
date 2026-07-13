@@ -35,9 +35,9 @@ export const colors = {
 
 export const radius = {
   sm: 6,
-  md: 8,
-  lg: 8,
-  xl: 8,
+  md: 12,
+  lg: 18,
+  xl: 24,
 };
 
 export const shadow =
@@ -56,18 +56,47 @@ export const shadow =
 export const glassShadow =
   Platform.OS === 'web'
     ? {
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 20px 46px rgba(0,0,0,0.32)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 18px 38px rgba(0,0,0,0.24)',
       }
     : {
         shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 16 },
-        shadowOpacity: 0.28,
-        shadowRadius: 24,
-        elevation: 8,
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.2,
+        shadowRadius: 18,
+        elevation: 5,
       };
 
 export const type = {
-  display: 'System',
-  body: 'System',
-  data: 'SpaceMono',
+  display: 'Inter_800ExtraBold',
+  body: 'Inter_400Regular',
+  data: 'Inter_700Bold',
+  medium: 'Inter_500Medium',
+  semibold: 'Inter_600SemiBold',
+};
+
+export const typography = {
+  h1: {
+    fontFamily: type.semibold,
+    fontSize: 16,
+    fontWeight: '600' as const,
+    lineHeight: 22,
+  },
+  h2: {
+    fontFamily: type.semibold,
+    fontSize: 12,
+    fontWeight: '700' as const,
+    lineHeight: 18,
+  },
+  body1: {
+    fontFamily: type.body,
+    fontSize: 12,
+    fontWeight: '400' as const,
+    lineHeight: 18,
+  },
+  body2: {
+    fontFamily: type.body,
+    fontSize: 10,
+    fontWeight: '400' as const,
+    lineHeight: 14,
+  },
 };

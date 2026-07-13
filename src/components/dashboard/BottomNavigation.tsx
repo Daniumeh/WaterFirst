@@ -4,14 +4,16 @@ import { colors } from '@/src/theme/tokens';
 
 export const bottomNavigationStyle: ViewStyle = {
   alignSelf: 'center',
-  backgroundColor: colors.midnight,
-  borderColor: colors.border,
-  borderTopColor: colors.border,
+  backgroundColor: 'rgba(5, 24, 39, 0.96)',
+  borderColor: colors.line,
+  borderTopColor: colors.line,
   borderWidth: 1,
-  height: 86,
+  borderTopLeftRadius: 24,
+  borderTopRightRadius: 24,
+  height: 82,
   maxWidth: 430,
-  paddingBottom: 12,
-  paddingTop: 10,
+  paddingBottom: 10,
+  paddingTop: 8,
   width: '100%',
 };
 
