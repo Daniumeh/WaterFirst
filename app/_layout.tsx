@@ -17,7 +17,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppScreen } from '@/src/components/layout/AppScreen';
 import { AuthProvider } from '@/src/features/auth/AuthProvider';
 import { configureNotificationPresentation } from '@/src/features/reminders/reminderService';
-import { hydraLockTheme } from '@/src/theme/paperTheme';
+import { waterFirstTheme } from '@/src/theme/paperTheme';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -67,7 +67,7 @@ function RootLayoutNav() {
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
-        <PaperProvider theme={hydraLockTheme}>
+        <PaperProvider theme={waterFirstTheme}>
           <AuthProvider>
             <AppScreen>
               <Stack>
@@ -78,7 +78,7 @@ function RootLayoutNav() {
                 <Stack.Screen name="reset-password" options={{ headerShown: false }} />
                 <Stack.Screen
                   name="soft-lock"
-                  options={{ title: 'HydraLock', presentation: 'modal' }}
+                  options={{ title: 'WaterFirst', presentation: 'modal' }}
                 />
               </Stack>
             </AppScreen>

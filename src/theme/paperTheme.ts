@@ -2,7 +2,7 @@ import { MD3DarkTheme } from 'react-native-paper';
 
 import { colors, typography } from './tokens';
 
-export const hydraLockTheme = {
+export const waterFirstTheme = {
   ...MD3DarkTheme,
   roundness: 4,
   fonts: {

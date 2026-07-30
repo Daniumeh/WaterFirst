@@ -1,5 +1,5 @@
 import { StyleSheet, View } from 'react-native';
-import { Card, Text } from 'react-native-paper';
+import { Button, Card, Text } from 'react-native-paper';
 
 import { colors, glassShadow, radius, spacing, typography } from '@/src/theme/tokens';
 
@@ -8,13 +8,19 @@ import { DashboardIcon, dashboardIcons } from './DashboardIcon';
 type SoftLockStatusCardProps = {
   enabled: boolean;
   nextEnforcementTime: string;
+  canTestSoftLock?: boolean;
   complianceScore: number;
+  onTestSoftLock?: () => void;
+  shieldedAppCount?: number;
 };
 
 export function SoftLockStatusCard({
   enabled,
   nextEnforcementTime,
+  canTestSoftLock,
   complianceScore,
+  onTestSoftLock,
+  shieldedAppCount = 0,
 }: SoftLockStatusCardProps) {
   return (
     <Card mode="contained" style={styles.card}>
@@ -37,7 +43,19 @@ export function SoftLockStatusCard({
         <View style={styles.metricsRow}>
           <InfoBlock label="Next Enforcement" value={nextEnforcementTime} />
           <InfoBlock label="Compliance Score" value={`${complianceScore}%`} accent />
+          <InfoBlock label="Shielded Apps" value={`${shieldedAppCount}`} />
         </View>
+
+        {onTestSoftLock ? (
+          <Button
+            mode="contained"
+            disabled={!(canTestSoftLock ?? (enabled && shieldedAppCount > 0))}
+            onPress={onTestSoftLock}
+            style={styles.testButton}
+          >
+            Test Soft Lock
+          </Button>
+        ) : null}
       </Card.Content>
     </Card>
   );
@@ -123,10 +141,12 @@ const styles = StyleSheet.create({
   },
   metricsRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
   },
   infoBlock: {
     flex: 1,
+    flexBasis: 96,
     minWidth: 0,
     gap: spacing.xs,
     borderColor: colors.line,
@@ -145,5 +165,9 @@ const styles = StyleSheet.create({
   },
   infoValueAccent: {
     color: colors.cyan,
+  },
+  testButton: {
+    borderRadius: radius.md,
+    backgroundColor: colors.cyan,
   },
 });

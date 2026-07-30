@@ -1,5 +1,5 @@
 const mockResetPasswordForEmail = jest.fn(async () => ({ error: null }));
-const mockCreateURL = jest.fn(() => 'hydralock://reset-password');
+const mockCreateURL = jest.fn(() => 'waterfirst://reset-password');
 
 jest.mock('@/src/lib/supabase', () => ({
   hasSupabaseConfig: true,
@@ -27,7 +27,7 @@ describe('authService password reset', () => {
 
     expect(mockCreateURL).toHaveBeenCalledWith('reset-password');
     expect(mockResetPasswordForEmail).toHaveBeenCalledWith('lebe@example.com', {
-      redirectTo: 'hydralock://reset-password',
+      redirectTo: 'waterfirst://reset-password',
     });
   });
 

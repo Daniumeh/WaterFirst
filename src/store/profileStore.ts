@@ -16,6 +16,7 @@ export const defaultProfile: HydrationProfile = {
   unitPreference: 'imperial',
   notificationConsent: false,
   softLockConsent: false,
+  softLockSelectedApplicationCount: 0,
   onboardingComplete: false,
 };
 

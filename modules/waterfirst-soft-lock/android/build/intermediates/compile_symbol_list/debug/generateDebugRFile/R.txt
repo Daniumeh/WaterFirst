@@ -1,0 +1,2 @@
+int string waterfirst_accessibility_description 0x0
+int xml waterfirst_accessibility_service 0x0

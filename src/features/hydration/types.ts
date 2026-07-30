@@ -16,6 +16,7 @@ export type HydrationProfile = {
   unitPreference: UnitPreference;
   notificationConsent: boolean;
   softLockConsent: boolean;
+  softLockSelectedApplicationCount: number;
   onboardingComplete: boolean;
 };
 

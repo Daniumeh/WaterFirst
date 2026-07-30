@@ -98,7 +98,7 @@ export async function scheduleCheckpointReminders(input: ReminderScheduleInput) 
           timeZone: getDeviceTimeZone(),
         },
         sound: true,
-        title: 'HydraLock',
+        title: 'WaterFirst',
       },
       trigger: {
         channelId: notificationChannelId,

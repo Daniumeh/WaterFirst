@@ -2,6 +2,7 @@ import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Text, TextInput } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { buildProfileFromUser, signInWithEmail } from '@/src/features/auth/authService';
 import { hasSupabaseConfig } from '@/src/lib/supabase';
@@ -9,6 +10,7 @@ import { useProfileStore } from '@/src/store/profileStore';
 import { colors, glassShadow, radius, spacing, typography } from '@/src/theme/tokens';
 
 export default function SignInScreen() {
+  const insets = useSafeAreaInsets();
   const profile = useProfileStore((state) => state.profile);
   const completeOnboarding = useProfileStore((state) => state.completeOnboarding);
   const [email, setEmail] = useState(profile.email);
@@ -21,6 +23,8 @@ export default function SignInScreen() {
   }
 
   const canSubmit = /^\S+@\S+\.\S+$/.test(email.trim()) && password.length >= 8 && hasSupabaseConfig;
+  const topSafePadding = Math.max(insets.top + spacing.lg, spacing.xxl);
+  const bottomSafePadding = Math.max(insets.bottom, 24);
 
   const handleSignIn = async () => {
     setIsSubmitting(true);
@@ -52,7 +56,18 @@ export default function SignInScreen() {
     >
       <View style={styles.reservoirBand} />
       <View style={styles.waterline} />
-      <ScrollView contentContainerStyle={styles.container} showsHorizontalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.container,
+          {
+            paddingBottom: bottomSafePadding,
+            paddingTop: topSafePadding,
+          },
+        ]}
+        keyboardShouldPersistTaps="handled"
+        showsHorizontalScrollIndicator={false}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.headerCard}>
           <View style={styles.logoMark}>
             <View style={styles.logoBarVertical} />
@@ -72,7 +87,7 @@ export default function SignInScreen() {
 
         <View style={styles.card}>
           <Text style={styles.cardTitle} variant="headlineSmall">
-            HydraLock account
+            WaterFirst account
           </Text>
           <Text style={styles.cardHelper}>Use the email and password from your sign-up flow.</Text>
 
@@ -160,9 +175,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.line,
   },
   container: {
+    flexGrow: 1,
     gap: spacing.lg,
     padding: spacing.lg,
-    paddingTop: spacing.xxl,
     backgroundColor: colors.ink,
   },
   headerCard: {

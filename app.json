@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "HydraLock",
-    "slug": "hydralock",
+    "name": "WaterFirst",
+    "slug": "waterfirst",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "hydralock",
+    "scheme": "waterfirst",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true

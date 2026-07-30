@@ -59,14 +59,21 @@ function readAuthRedirectParams(url: string) {
 
 export function buildProfileFromUser(user: User): HydrationProfile {
   const metadata = user.user_metadata ?? {};
+  const fullName =
+    typeof metadata.full_name === 'string'
+      ? metadata.full_name
+      : typeof metadata.display_name === 'string'
+        ? metadata.display_name
+        : '';
   const firstName = typeof metadata.first_name === 'string' ? metadata.first_name : '';
   const lastName = typeof metadata.last_name === 'string' ? metadata.last_name : '';
-  const fallbackName = [firstName, lastName].filter(Boolean).join(' ').trim();
+  const fallbackName = fullName || [firstName, lastName].filter(Boolean).join(' ').trim();
+  const [derivedFirstName = '', ...derivedRemainingNames] = fallbackName.split(/\s+/);
 
   return {
-    name: fallbackName || user.email?.split('@')[0] || 'HydraLock User',
-    firstName,
-    lastName,
+    name: fallbackName || user.email?.split('@')[0] || 'WaterFirst User',
+    firstName: firstName || derivedFirstName,
+    lastName: lastName || derivedRemainingNames.join(' '),
     email: user.email ?? '',
     weight: typeof metadata.weight === 'number' ? metadata.weight : 180,
     activityLevel:
@@ -86,6 +93,7 @@ export function buildProfileFromUser(user: User): HydrationProfile {
     unitPreference: metadata.unit_preference === 'metric' ? 'metric' : 'imperial',
     notificationConsent: Boolean(metadata.notification_consent),
     softLockConsent: Boolean(metadata.soft_lock_consent),
+    softLockSelectedApplicationCount: 0,
     onboardingComplete: true,
   };
 }
@@ -111,7 +119,9 @@ export async function signUpWithProfile({
         activity_description: profile.activityDescription,
         activity_level: profile.activityLevel,
         climate: profile.climate,
+        display_name: profile.name,
         first_name: profile.firstName,
+        full_name: profile.name,
         last_name: profile.lastName,
         notification_consent: profile.notificationConsent,
         onboarding_complete: profile.onboardingComplete,

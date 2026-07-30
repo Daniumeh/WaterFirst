@@ -1,20 +1,78 @@
+import { useCallback, useEffect, useState } from 'react';
 import { router } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { Alert, AppState, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Card, ProgressBar, Text } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { addLocalMinutes, getDeviceNow } from '@/src/features/hydration/deviceTime';
+import {
+  deactivateSoftLock,
+  getLastDetectedPackageForDebug,
+  isAccessibilityServiceEnabled,
+  openAccessibilitySettings,
+} from '@/src/features/accountability/nativeSoftLockAdapter';
 import { useAccountabilityStore } from '@/src/store/accountabilityStore';
 import { useHydrationStore } from '@/src/store/hydrationStore';
+import { useProfileStore } from '@/src/store/profileStore';
 import { colors, radius, shadow, spacing, typography } from '@/src/theme/tokens';
 
 const quickLogMl = 250;
 
 export default function SoftLockScreen() {
+  const insets = useSafeAreaInsets();
+  const [accessibilityEnabled, setAccessibilityEnabled] = useState<boolean | null>(null);
   const { progress, logWater } = useHydrationStore();
-  const { recordOverride, snoozeUntil } = useAccountabilityStore();
+  const profile = useProfileStore((state) => state.profile);
+  const {
+    activeShield,
+    dailySkipCount,
+    dailySkipLimit,
+    selectedApplicationCount,
+    skipForNow,
+  } = useAccountabilityStore();
+  const shieldedAppCount =
+    selectedApplicationCount || profile.softLockSelectedApplicationCount;
+  const topSafePadding = Math.max(insets.top, 24);
+  const bottomSafePadding = Math.max(insets.bottom, 24);
+  const requiredTotalMl = activeShield?.requiredAmountMl ?? progress.loggedMl + quickLogMl;
+  const amountToLogMl = Math.max(requiredTotalMl - progress.loggedMl, quickLogMl);
+  const skipsRemaining = Math.max(dailySkipLimit - dailySkipCount, 0);
+  const refreshAccessibilityStatus = useCallback(async () => {
+    if (Platform.OS !== 'android') {
+      return;
+    }
+
+    setAccessibilityEnabled(await isAccessibilityServiceEnabled());
+  }, []);
+
+  useEffect(() => {
+    const initialRefresh = setTimeout(() => {
+      void refreshAccessibilityStatus();
+    }, 0);
+
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        void refreshAccessibilityStatus();
+      }
+    });
+
+    return () => {
+      clearTimeout(initialRefresh);
+      subscription.remove();
+    };
+  }, [refreshAccessibilityStatus]);
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      contentContainerStyle={[
+        styles.container,
+        {
+          paddingTop: topSafePadding,
+          paddingBottom: bottomSafePadding,
+        },
+      ]}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.cyanBlock} />
       <Card mode="contained" style={styles.card}>
         <Card.Content style={styles.content}>
@@ -24,15 +82,26 @@ export default function SoftLockScreen() {
             </Text>
           </View>
           <Text style={styles.kicker} variant="labelLarge">
-            Soft-lock active
+            Soft lock active
           </Text>
           <Text style={styles.title} variant="headlineSmall">
-            HydraLock check-in
+            Hydration check-in
           </Text>
           <Text style={styles.subtitle} variant="bodyLarge">
-            You missed a hydration checkpoint. Take a quick drink, snooze the nudge, or override it
-            if your day needs flexibility.
+            Drink and log your water to continue.
           </Text>
+          {shieldedAppCount > 0 ? (
+            <View style={styles.shieldPanel}>
+              <Text style={styles.panelLabel}>Shielded selection</Text>
+              <Text style={styles.panelValue}>{shieldedAppCount} apps, categories, or domains</Text>
+            </View>
+          ) : null}
+          {activeShield ? (
+            <Text style={styles.subtitle}>
+              Your {activeShield.dueTimeLabel} checkpoint is waiting. Log the required water to
+              restore access.
+            </Text>
+          ) : null}
           <ProgressBar
             color={colors.cyan}
             progress={progress.percentComplete / 100}
@@ -45,41 +114,96 @@ export default function SoftLockScreen() {
             mode="contained"
             style={styles.primaryButton}
             onPress={() => {
-              logWater(quickLogMl);
+              logWater(amountToLogMl);
               router.replace('/(tabs)');
             }}
           >
-            Log 250 ml
+            Log {amountToLogMl} ml and continue
           </Button>
           <Button
             mode="outlined"
             textColor={colors.cyanSoft}
-            onPress={() => {
-              snoozeUntil(addLocalMinutes(getDeviceNow(), 30).toISOString());
-              router.replace('/(tabs)');
+            onPress={async () => {
+              try {
+                if (activeShield) {
+                  await deactivateSoftLock({
+                    reason: 'skip',
+                    sessionId: activeShield.checkpointId,
+                  });
+                }
+
+                skipForNow();
+                router.replace('/(tabs)');
+              } catch (error) {
+                Alert.alert(
+                  'Could not skip',
+                  error instanceof Error
+                    ? error.message
+                    : 'Waterfirst could not remove the native Soft Lock.',
+                );
+              }
             }}
+            disabled={skipsRemaining === 0}
           >
-            Snooze 30 minutes
+            Skip for now ({skipsRemaining} left today)
           </Button>
-          <Button
-            mode="text"
-            textColor={colors.muted}
-            onPress={() => {
-              recordOverride();
-              router.replace('/(tabs)');
-            }}
-          >
-            Override for now
-          </Button>
+          <Text style={styles.caption}>
+            Emergency skips pause the shield for 15 minutes and are limited daily.
+          </Text>
+          {Platform.OS === 'android' ? (
+            <View style={styles.androidDebugPanel}>
+              <Text style={styles.panelLabel}>Android permission test</Text>
+              <Text style={styles.panelValue}>
+                Accessibility Service:{' '}
+                {accessibilityEnabled ? 'Enabled' : 'Not enabled'}
+              </Text>
+              <Button
+                mode="outlined"
+                textColor={colors.cyanSoft}
+                onPress={async () => {
+                  try {
+                    await openAccessibilitySettings();
+                  } catch (error) {
+                    Alert.alert(
+                      'Could not open settings',
+                      error instanceof Error
+                        ? error.message
+                        : 'Waterfirst could not open Android Accessibility Settings.',
+                    );
+                  }
+                }}
+              >
+                Open Accessibility Settings
+              </Button>
+              <Button mode="outlined" textColor={colors.cyanSoft} onPress={refreshAccessibilityStatus}>
+                Refresh Permission Status
+              </Button>
+              {__DEV__ ? (
+                <Button
+                  mode="outlined"
+                  textColor={colors.cyanSoft}
+                  onPress={async () => {
+                    const lastDetectedPackage = await getLastDetectedPackageForDebug();
+                    Alert.alert(
+                      'Last detected app',
+                      lastDetectedPackage ?? 'No foreground app package detected yet.',
+                    );
+                  }}
+                >
+                  Check Last Detected App
+                </Button>
+              ) : null}
+            </View>
+          ) : null}
         </Card.Content>
       </Card>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: 'center',
     padding: spacing.lg,
     backgroundColor: colors.ink,
@@ -144,5 +268,36 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     borderRadius: radius.md,
     backgroundColor: colors.cyan,
+  },
+  shieldPanel: {
+    alignSelf: 'stretch',
+    borderColor: colors.line,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    gap: spacing.xs,
+    padding: spacing.md,
+    backgroundColor: colors.panel,
+  },
+  androidDebugPanel: {
+    alignSelf: 'stretch',
+    borderColor: colors.line,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    gap: spacing.sm,
+    padding: spacing.md,
+    backgroundColor: colors.panel,
+  },
+  panelLabel: {
+    color: colors.muted,
+    ...typography.h2,
+  },
+  panelValue: {
+    color: colors.text,
+    ...typography.h1,
+  },
+  caption: {
+    color: colors.faint,
+    ...typography.body2,
+    textAlign: 'center',
   },
 });

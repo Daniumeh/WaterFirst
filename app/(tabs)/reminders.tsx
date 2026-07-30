@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Card, Switch, Text, TextInput } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { addLocalMinutes, getDeviceNow } from '@/src/features/hydration/deviceTime';
 import { generateCheckpoints } from '@/src/features/hydration/hydrationMath';
@@ -14,6 +15,7 @@ import { useReminderStore } from '@/src/store/reminderStore';
 import { colors, radius, spacing, typography } from '@/src/theme/tokens';
 
 export default function RemindersScreen() {
+  const insets = useSafeAreaInsets();
   const { goal, checkpoints, setCheckpoints } = useHydrationStore();
   const {
     permissionMessage,
@@ -26,6 +28,8 @@ export default function RemindersScreen() {
     pauseUntil,
   } = useReminderStore();
   const [isScheduling, setIsScheduling] = useState(false);
+  const topSafePadding = Math.max(insets.top + spacing.md, spacing.lg);
+  const bottomSafePadding = Math.max(insets.bottom + 96, 110);
 
   const handleReminderToggle = async (enabled: boolean) => {
     setIsScheduling(true);
@@ -94,7 +98,18 @@ export default function RemindersScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container} showsHorizontalScrollIndicator={false}>
+    <ScrollView
+      contentContainerStyle={[
+        styles.container,
+        {
+          paddingBottom: bottomSafePadding,
+          paddingTop: topSafePadding,
+        },
+      ]}
+      keyboardShouldPersistTaps="handled"
+      showsHorizontalScrollIndicator={false}
+      showsVerticalScrollIndicator={false}
+    >
       <Text style={styles.title} variant="headlineSmall">
         Reminders
       </Text>
@@ -198,6 +213,7 @@ export default function RemindersScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    flexGrow: 1,
     gap: spacing.lg,
     padding: spacing.lg,
     backgroundColor: colors.ink,

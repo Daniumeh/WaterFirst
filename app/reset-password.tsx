@@ -2,12 +2,14 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Text, TextInput } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { updatePassword } from '@/src/features/auth/authService';
 import { hasSupabaseConfig } from '@/src/lib/supabase';
 import { colors, glassShadow, radius, spacing, typography } from '@/src/theme/tokens';
 
 export default function ResetPasswordScreen() {
+  const insets = useSafeAreaInsets();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -17,6 +19,8 @@ export default function ResetPasswordScreen() {
   const passwordIsLongEnough = password.length >= 8;
   const passwordsMatch = password === confirmPassword;
   const canSubmit = passwordIsLongEnough && passwordsMatch && hasSupabaseConfig;
+  const topSafePadding = Math.max(insets.top + spacing.lg, spacing.xxl);
+  const bottomSafePadding = Math.max(insets.bottom, 24);
 
   const handleUpdatePassword = async () => {
     setIsSubmitting(true);
@@ -25,7 +29,7 @@ export default function ResetPasswordScreen() {
 
     try {
       await updatePassword(password);
-      setMessage('Password updated. You can continue to your HydraLock dashboard.');
+      setMessage('Password updated. You can continue to your WaterFirst dashboard.');
     } catch (error) {
       setErrorMessage(
         error instanceof Error
@@ -44,7 +48,18 @@ export default function ResetPasswordScreen() {
     >
       <View style={styles.reservoirBand} />
       <View style={styles.waterline} />
-      <ScrollView contentContainerStyle={styles.container} showsHorizontalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.container,
+          {
+            paddingBottom: bottomSafePadding,
+            paddingTop: topSafePadding,
+          },
+        ]}
+        keyboardShouldPersistTaps="handled"
+        showsHorizontalScrollIndicator={false}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.headerCard}>
           <View style={styles.logoMark}>
             <View style={styles.logoBarVertical} />
@@ -144,9 +159,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.line,
   },
   container: {
+    flexGrow: 1,
     gap: spacing.lg,
     padding: spacing.lg,
-    paddingTop: spacing.xxl,
     backgroundColor: colors.ink,
   },
   headerCard: {

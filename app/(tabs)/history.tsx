@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Card, Text } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { UnitSwitcher } from '@/src/components/dashboard/UnitSwitcher';
 import {
@@ -30,6 +31,7 @@ type CalendarDay = {
 const weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 export default function HistoryScreen() {
+  const insets = useSafeAreaInsets();
   const logs = useHydrationStore((state) => state.logs);
   const targetMl = useHydrationStore((state) => state.goal.targetMl);
   const now = getDeviceNow();
@@ -56,9 +58,21 @@ export default function HistoryScreen() {
     month: 'long',
     year: 'numeric',
   });
+  const topSafePadding = Math.max(insets.top + spacing.md, spacing.lg);
+  const bottomSafePadding = Math.max(insets.bottom + 96, 110);
 
   return (
-    <ScrollView contentContainerStyle={styles.container} showsHorizontalScrollIndicator={false}>
+    <ScrollView
+      contentContainerStyle={[
+        styles.container,
+        {
+          paddingBottom: bottomSafePadding,
+          paddingTop: topSafePadding,
+        },
+      ]}
+      showsHorizontalScrollIndicator={false}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.header}>
         <View>
           <Text style={styles.kicker}>Local hydration history</Text>
@@ -352,9 +366,9 @@ function getEncouragingMessage(percentComplete: number) {
 
 const styles = StyleSheet.create({
   container: {
+    flexGrow: 1,
     gap: spacing.md,
     padding: spacing.md,
-    paddingBottom: 110,
     backgroundColor: colors.ink,
   },
   header: {

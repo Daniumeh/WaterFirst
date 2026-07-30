@@ -1,0 +1,3 @@
+com.waterfirst.softlock
+string waterfirst_accessibility_description
+xml waterfirst_accessibility_service

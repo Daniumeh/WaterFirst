@@ -1,5 +1,6 @@
-import { StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 import { Button, Card, Text } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { signOut } from '@/src/features/auth/authService';
 import { useAuthStore } from '@/src/store/authStore';
@@ -7,6 +8,7 @@ import { useProfileStore } from '@/src/store/profileStore';
 import { colors, radius, spacing, typography } from '@/src/theme/tokens';
 
 export default function ProfileScreen() {
+  const insets = useSafeAreaInsets();
   const user = useAuthStore((state) => state.user);
   const profile = useProfileStore((state) => state.profile);
   const resetOnboarding = useProfileStore((state) => state.resetOnboarding);
@@ -15,16 +17,28 @@ export default function ProfileScreen() {
     await signOut();
     resetOnboarding();
   };
+  const topSafePadding = Math.max(insets.top + spacing.md, spacing.lg);
+  const bottomSafePadding = Math.max(insets.bottom + 96, 110);
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      contentContainerStyle={[
+        styles.container,
+        {
+          paddingBottom: bottomSafePadding,
+          paddingTop: topSafePadding,
+        },
+      ]}
+      showsHorizontalScrollIndicator={false}
+      showsVerticalScrollIndicator={false}
+    >
       <Text style={styles.title} variant="headlineSmall">
         Profile
       </Text>
       <Card mode="contained" style={styles.card}>
         <Card.Content style={styles.content}>
           <Text style={styles.cardTitle} variant="titleLarge">
-            {profile.name || 'HydraLock User'}
+            {profile.name || 'WaterFirst User'}
           </Text>
           <Text style={styles.subtitle}>{user?.email ?? profile.email ?? 'No email saved yet'}</Text>
           <Text style={styles.subtitle}>
@@ -36,13 +50,13 @@ export default function ProfileScreen() {
           </Button>
         </Card.Content>
       </Card>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     gap: spacing.lg,
     padding: spacing.lg,
     backgroundColor: colors.ink,

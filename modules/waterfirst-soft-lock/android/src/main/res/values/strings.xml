@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="waterfirst_accessibility_description">Waterfirst Soft Lock detects when you open apps you selected for hydration accountability. It does not read screen content, messages, passwords or typed text.</string>
+</resources>

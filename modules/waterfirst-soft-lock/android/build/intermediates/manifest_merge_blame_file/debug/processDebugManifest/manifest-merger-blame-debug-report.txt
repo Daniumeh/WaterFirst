@@ -1,0 +1,33 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.waterfirst.softlock" >
+4
+5    <uses-sdk android:minSdkVersion="24" />
+6
+7    <application>
+7-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:2:3-15:17
+8        <service
+8-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:3:5-14:15
+9            android:name="com.waterfirst.softlock.WaterfirstAccessibilityService"
+9-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:4:7-76
+10            android:exported="false"
+10-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:5:7-31
+11            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" >
+11-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:6:7-73
+12            <intent-filter>
+12-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:7:7-9:23
+13                <action android:name="android.accessibilityservice.AccessibilityService" />
+13-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:8:9-84
+13-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:8:17-81
+14            </intent-filter>
+15
+16            <meta-data
+16-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:11:7-13:68
+17                android:name="android.accessibilityservice"
+17-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:12:9-52
+18                android:resource="@xml/waterfirst_accessibility_service" />
+18-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:13:9-65
+19        </service>
+20    </application>
+21
+22</manifest>

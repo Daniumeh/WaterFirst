@@ -9,12 +9,20 @@ import {
   Text,
   TextInput,
 } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import {
+  getSoftLockStatus,
+  presentSoftLockApplicationPicker,
+  requestSoftLockAuthorization,
+  type SoftLockAdapterStatus,
+} from '@/src/features/accountability/nativeSoftLockAdapter';
 import { signUpWithProfile } from '@/src/features/auth/authService';
 import { calculateDailyGoalMl, generateCheckpoints } from '@/src/features/hydration/hydrationMath';
 import { saveOnboardingPlan } from '@/src/features/hydration/hydrationRepository';
 import type { ActivityLevel, Climate, UnitPreference } from '@/src/features/hydration/types';
 import { scheduleCheckpointReminders } from '@/src/features/reminders/reminderService';
+import { useAccountabilityStore } from '@/src/store/accountabilityStore';
 import { useHydrationStore } from '@/src/store/hydrationStore';
 import { useProfileStore } from '@/src/store/profileStore';
 import { useReminderStore } from '@/src/store/reminderStore';
@@ -36,7 +44,7 @@ const steps = [
   {
     eyebrow: 'Step 1 of 4',
     title: 'Create your WaterFirst profile',
-    helper: 'Start with the basics HydraLock needs to save your plan.',
+    helper: 'Start with the basics WaterFirst needs to save your plan.',
   },
   {
     eyebrow: 'Step 2 of 4',
@@ -51,17 +59,20 @@ const steps = [
   {
     eyebrow: 'Step 4 of 4',
     title: 'Activate accountability',
-    helper: 'Review the plan and choose how HydraLock may nudge you.',
+    helper: 'Review the plan and choose how WaterFirst may nudge you.',
   },
 ];
 
 export default function OnboardingScreen() {
+  const insets = useSafeAreaInsets();
   const { profile, completeOnboarding } = useProfileStore();
   const { setGoal, setCheckpoints } = useHydrationStore();
+  const setSelectedApplicationCount = useAccountabilityStore((state) => state.setSelectedApplicationCount);
   const { setPermissionState, setScheduledNotificationIds, updateSettings } = useReminderStore();
   const [step, setStep] = useState(0);
-  const [firstName, setFirstName] = useState(profile.firstName || profile.name);
-  const [lastName, setLastName] = useState(profile.lastName);
+  const [fullName, setFullName] = useState(
+    profile.name || [profile.firstName, profile.lastName].filter(Boolean).join(' '),
+  );
   const [email, setEmail] = useState(profile.email);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -74,6 +85,15 @@ export default function OnboardingScreen() {
   const [unitPreference, setUnitPreference] = useState<UnitPreference>(profile.unitPreference);
   const [notificationConsent, setNotificationConsent] = useState(profile.notificationConsent);
   const [softLockConsent, setSoftLockConsent] = useState(profile.softLockConsent);
+  const [selectedApplicationCount, setSelectedApplicationCountState] = useState(
+    profile.softLockSelectedApplicationCount,
+  );
+  const [softLockNativeStatus, setSoftLockNativeStatus] = useState<
+    SoftLockAdapterStatus['authorizationStatus'] | null
+  >(null);
+  const [softLockRuntime, setSoftLockRuntime] = useState<SoftLockAdapterStatus['runtime'] | null>(
+    null,
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authMessage, setAuthMessage] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -94,25 +114,64 @@ export default function OnboardingScreen() {
   }
 
   const activeStep = steps[step];
+  const topSafePadding = Math.max(insets.top + spacing.lg, spacing.xxl);
+  const bottomSafePadding = Math.max(insets.bottom, 24);
   const emailLooksValid = /^\S+@\S+\.\S+$/.test(email.trim());
   const passwordLooksValid = password.length >= 8;
   const passwordsMatch = password === confirmPassword;
   const canContinue =
     (step === 0 &&
-      firstName.trim().length > 0 &&
-      lastName.trim().length > 0 &&
+      fullName.trim().length > 0 &&
       emailLooksValid &&
       passwordLooksValid &&
       passwordsMatch) ||
     (step === 1 && Number(weight) > 0 && wakeTime.trim().length > 0 && sleepTime.trim().length > 0) ||
     (step === 2 && activityDescription.trim().length >= 12) ||
-    (step === 3 && softLockConsent);
+    (step === 3 &&
+      softLockConsent &&
+      (selectedApplicationCount > 0 || softLockRuntime === 'androidPreview'));
+
+  const handleRequestSoftLockAuthorization = async () => {
+    setAuthError(null);
+    const nativeStatus = await getSoftLockStatus();
+    setSoftLockRuntime(nativeStatus.runtime);
+    const status = await requestSoftLockAuthorization();
+    setSoftLockNativeStatus(status);
+
+    if (nativeStatus.runtime === 'androidPreview') {
+      setAuthError(
+        'Android Soft Lock preview is enabled. Waterfirst will run the hydration check-in flow, but it will not block other apps.',
+      );
+      return;
+    }
+
+    if (status !== 'approved') {
+      setAuthError(
+        status === 'unsupported'
+          ? 'Actual app blocking requires the Waterfirst iOS development build.'
+          : 'Screen Time permission is required before Waterfirst can shield apps.',
+      );
+    }
+  };
+
+  const handleChooseShieldedApps = async () => {
+    setAuthError(null);
+
+    try {
+      const result = await presentSoftLockApplicationPicker();
+      setSelectedApplicationCountState(result.selectedApplicationCount);
+      setSelectedApplicationCount(result.selectedApplicationCount);
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Could not open the native app picker.');
+    }
+  };
 
   const activatePlan = async () => {
-    const cleanFirstName = firstName.trim();
-    const cleanLastName = lastName.trim();
+    const cleanFullName = fullName.trim();
+    const [cleanFirstName = '', ...remainingNames] = cleanFullName.split(/\s+/);
+    const cleanLastName = remainingNames.join(' ');
     const savedProfile = {
-      name: `${cleanFirstName} ${cleanLastName}`.trim(),
+      name: cleanFullName,
       firstName: cleanFirstName,
       lastName: cleanLastName,
       email: email.trim().toLowerCase(),
@@ -125,6 +184,7 @@ export default function OnboardingScreen() {
       unitPreference,
       notificationConsent,
       softLockConsent,
+      softLockSelectedApplicationCount: selectedApplicationCount,
       onboardingComplete: true,
     };
     const goal = {
@@ -180,6 +240,7 @@ export default function OnboardingScreen() {
       }
 
       completeOnboarding(savedProfile);
+      setSelectedApplicationCount(savedProfile.softLockSelectedApplicationCount);
       setGoal(goal);
       setCheckpoints(checkpoints);
 
@@ -209,7 +270,18 @@ export default function OnboardingScreen() {
     >
       <View style={styles.reservoirBand} />
       <View style={styles.waterline} />
-      <ScrollView contentContainerStyle={styles.container} showsHorizontalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.container,
+          {
+            paddingBottom: bottomSafePadding,
+            paddingTop: topSafePadding,
+          },
+        ]}
+        keyboardShouldPersistTaps="handled"
+        showsHorizontalScrollIndicator={false}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.headerCard}>
           <View style={styles.logoMark}>
             <View style={styles.logoBarVertical} />
@@ -220,7 +292,7 @@ export default function OnboardingScreen() {
             WaterFirst
           </Text>
           <Text style={styles.title} variant="displaySmall">
-            HydraLock
+            WaterFirst
           </Text>
           <Text style={styles.subtitle} variant="bodyLarge">
             A guided lock setup for hydration accountability.
@@ -240,18 +312,11 @@ export default function OnboardingScreen() {
           {step === 0 ? (
             <View style={styles.fieldStack}>
               <TextInput
-                label="First name"
+                label="Full name"
                 mode="outlined"
                 style={styles.input}
-                value={firstName}
-                onChangeText={setFirstName}
-              />
-              <TextInput
-                label="Last name"
-                mode="outlined"
-                style={styles.input}
-                value={lastName}
-                onChangeText={setLastName}
+                value={fullName}
+                onChangeText={setFullName}
               />
               <TextInput
                 autoCapitalize="none"
@@ -391,8 +456,41 @@ export default function OnboardingScreen() {
                 label="I consent to soft-lock accountability nudges when I miss checkpoints."
                 onPress={() => setSoftLockConsent((value) => !value)}
               />
+              <View style={styles.fieldGroup}>
+                <Text style={styles.sectionLabel} variant="labelLarge">
+                  Shield distracting apps
+                </Text>
+                <Text style={styles.stepHelper}>
+                  Waterfirst uses Apple protected picker. App tokens stay on this device and are
+                  not uploaded to Supabase.
+                </Text>
+                <View style={styles.nativePickerCard}>
+                  <Text style={styles.nativePickerValue}>
+                    {selectedApplicationCount} apps, categories, or domains selected
+                  </Text>
+                  {softLockNativeStatus ? (
+                    <Text style={styles.stepHelper}>Screen Time status: {softLockNativeStatus}</Text>
+                  ) : null}
+                  {softLockRuntime === 'androidPreview' ? (
+                    <Text style={styles.stepHelper}>
+                      Android preview mode: external apps are not restricted.
+                    </Text>
+                  ) : null}
+                  <View style={styles.nativePickerActions}>
+                    <Button mode="outlined" textColor={colors.cyanSoft} onPress={() => void handleRequestSoftLockAuthorization()}>
+                      Request permission
+                    </Button>
+                    <Button mode="contained" style={styles.nativePickerButton} onPress={() => void handleChooseShieldedApps()}>
+                      Choose apps
+                    </Button>
+                  </View>
+                </View>
+              </View>
               {!softLockConsent ? (
-                <Text style={styles.warning}>Soft-lock consent is required to activate HydraLock.</Text>
+                <Text style={styles.warning}>Soft-lock consent is required to activate WaterFirst.</Text>
+              ) : null}
+              {softLockConsent && selectedApplicationCount === 0 && softLockRuntime !== 'androidPreview' ? (
+                <Text style={styles.warning}>Choose at least one app with Apple native picker.</Text>
               ) : null}
               {authError ? <Text style={styles.warning}>{authError}</Text> : null}
               {authMessage ? <Text style={styles.success}>{authMessage}</Text> : null}
@@ -425,7 +523,7 @@ export default function OnboardingScreen() {
             style={styles.primaryButton}
             contentStyle={styles.buttonContent}
           >
-            {step === steps.length - 1 ? 'Activate HydraLock' : 'Continue'}
+            {step === steps.length - 1 ? 'Activate WaterFirst' : 'Continue'}
           </Button>
         </View>
         <Button
@@ -483,9 +581,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.line,
   },
   container: {
+    flexGrow: 1,
     gap: spacing.lg,
     padding: spacing.lg,
-    paddingTop: spacing.xxl,
     backgroundColor: colors.ink,
   },
   headerCard: {
@@ -611,6 +709,26 @@ const styles = StyleSheet.create({
     color: colors.cyan,
     ...typography.h1,
     textAlign: 'center',
+  },
+  nativePickerCard: {
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    gap: spacing.md,
+    padding: spacing.md,
+    backgroundColor: colors.panel,
+  },
+  nativePickerValue: {
+    color: colors.text,
+    ...typography.h1,
+  },
+  nativePickerActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  nativePickerButton: {
+    backgroundColor: colors.cyan,
   },
   timeRow: {
     flexDirection: 'row',

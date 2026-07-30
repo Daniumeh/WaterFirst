@@ -2,12 +2,14 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Text, TextInput } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { requestPasswordReset } from '@/src/features/auth/authService';
 import { hasSupabaseConfig } from '@/src/lib/supabase';
 import { colors, glassShadow, radius, spacing, typography } from '@/src/theme/tokens';
 
 export default function ForgotPasswordScreen() {
+  const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -15,6 +17,8 @@ export default function ForgotPasswordScreen() {
 
   const normalizedEmail = email.trim().toLowerCase();
   const canSubmit = /^\S+@\S+\.\S+$/.test(normalizedEmail) && hasSupabaseConfig;
+  const topSafePadding = Math.max(insets.top + spacing.lg, spacing.xxl);
+  const bottomSafePadding = Math.max(insets.bottom, 24);
 
   const handleSendReset = async () => {
     setIsSubmitting(true);
@@ -24,7 +28,7 @@ export default function ForgotPasswordScreen() {
     try {
       await requestPasswordReset(normalizedEmail);
       setMessage(
-        'If that email belongs to a HydraLock account, a reset link is on its way. Open it on this device to choose a new password.',
+        'If that email belongs to a WaterFirst account, a reset link is on its way. Open it on this device to choose a new password.',
       );
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Could not send reset link.');
@@ -40,7 +44,18 @@ export default function ForgotPasswordScreen() {
     >
       <View style={styles.reservoirBand} />
       <View style={styles.waterline} />
-      <ScrollView contentContainerStyle={styles.container} showsHorizontalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.container,
+          {
+            paddingBottom: bottomSafePadding,
+            paddingTop: topSafePadding,
+          },
+        ]}
+        keyboardShouldPersistTaps="handled"
+        showsHorizontalScrollIndicator={false}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.headerCard}>
           <View style={styles.logoMark}>
             <View style={styles.logoBarVertical} />
@@ -54,7 +69,7 @@ export default function ForgotPasswordScreen() {
             Forgot password?
           </Text>
           <Text style={styles.subtitle} variant="bodyLarge">
-            Enter your email and HydraLock will send a secure reset link.
+            Enter your email and WaterFirst will send a secure reset link.
           </Text>
         </View>
 
@@ -63,7 +78,7 @@ export default function ForgotPasswordScreen() {
             Reset your password
           </Text>
           <Text style={styles.cardHelper}>
-            Use the email connected to your account. The reset link will open HydraLock so you can
+            Use the email connected to your account. The reset link will open WaterFirst so you can
             set a new password.
           </Text>
 
@@ -125,9 +140,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.line,
   },
   container: {
+    flexGrow: 1,
     gap: spacing.lg,
     padding: spacing.lg,
-    paddingTop: spacing.xxl,
     backgroundColor: colors.ink,
   },
   headerCard: {

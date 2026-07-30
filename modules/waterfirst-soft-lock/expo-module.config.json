@@ -1,0 +1,9 @@
+{
+  "platforms": ["ios", "android"],
+  "ios": {
+    "modules": ["WaterfirstSoftLockModule"]
+  },
+  "android": {
+    "modules": ["com.waterfirst.softlock.WaterfirstSoftLockModule"]
+  }
+}

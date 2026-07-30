@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 
+import { deactivateSoftLock } from '@/src/features/accountability/nativeSoftLockAdapter';
 import {
   getAccurateLogTimestamp,
   getDeviceNow,
@@ -14,6 +15,7 @@ import type {
   HydrationLog,
   HydrationProgress,
 } from '@/src/features/hydration/types';
+import { useAccountabilityStore } from '@/src/store/accountabilityStore';
 
 const defaultGoal: HydrationGoal = {
   targetMl: 2850,
@@ -58,8 +60,18 @@ export const useHydrationStore = create<HydrationStore>((set) => ({
         ...state.logs,
       ];
       const loggedMl = sumLogsForLocalDate(logs, now);
+      const activeShield = useAccountabilityStore.getState().activeShield;
 
       void saveWaterLog(safeAmount, 'quick_log', now);
+
+      if (activeShield && loggedMl >= activeShield.requiredAmountMl) {
+        void deactivateSoftLock({
+          reason: 'water_logged',
+          sessionId: activeShield.checkpointId,
+        }).then(() => {
+          useAccountabilityStore.getState().releaseShield();
+        });
+      }
 
       return {
         activeDateKey,
