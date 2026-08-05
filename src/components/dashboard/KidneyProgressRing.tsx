@@ -65,7 +65,11 @@ export function KidneyProgressRing({ progress, size = 'hero' }: KidneyProgressRi
             <KidneyLobe side="left" waterTop={waterTop} />
             <KidneyLobe side="right" waterTop={waterTop} />
           </View>
-          {size === 'hero' ? <Text style={styles.centerLabel}>Keep going</Text> : null}
+          {size !== 'mini' ? (
+            <Text style={[styles.centerLabel, size === 'compactHero' && styles.centerLabelCompact]}>
+              {clampedProgress >= 1 ? 'Full' : 'Keep going'}
+            </Text>
+          ) : null}
         </View>
       </View>
     </View>
@@ -379,5 +383,8 @@ const styles = StyleSheet.create({
     color: colors.text,
     ...typography.h2,
     marginTop: spacing.sm,
+  },
+  centerLabelCompact: {
+    marginTop: spacing.xs,
   },
 });
