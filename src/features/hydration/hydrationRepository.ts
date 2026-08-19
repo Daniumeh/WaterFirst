@@ -1,6 +1,7 @@
 import type {
   HydrationCheckpoint,
   HydrationGoal,
+  HydrationLog,
   HydrationProfile,
 } from '@/src/features/hydration/types';
 import { supabase } from '@/src/lib/supabase';
@@ -153,4 +154,41 @@ export async function saveWaterLog(amountMl: number, source = 'quick_log', logge
     unit: 'ml',
     user_id: user.id,
   });
+}
+
+export async function fetchWaterLogsForRange(start: Date, endExclusive: Date): Promise<HydrationLog[]> {
+  if (!supabase) {
+    return [];
+  }
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) {
+    throw userError;
+  }
+
+  if (!user) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from('water_logs')
+    .select('id, amount_ml, logged_at')
+    .eq('user_id', user.id)
+    .gte('logged_at', start.toISOString())
+    .lt('logged_at', endExclusive.toISOString())
+    .order('logged_at', { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).map((log) => ({
+    id: log.id,
+    amountMl: log.amount_ml,
+    loggedAt: log.logged_at,
+  }));
 }

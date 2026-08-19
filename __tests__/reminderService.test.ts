@@ -23,4 +23,41 @@ describe('hydration reminder scheduling', () => {
     expect(requests.map((request) => request.offsetMinutes)).toEqual([15, 5, 0]);
     expect(requests.map((request) => request.nextFireDate.getDate())).toEqual([1, 30, 30]);
   });
+
+  it('creates a 15 minute reminder before the next water schedule', () => {
+    const morning: HydrationCheckpoint = {
+      dueMinutes: 9 * 60,
+      id: 'morning',
+      targetMl: 500,
+      timeLabel: '09:00',
+    };
+    const next: HydrationCheckpoint = {
+      dueMinutes: 10 * 60,
+      id: 'next',
+      targetMl: 1000,
+      timeLabel: '10:00',
+    };
+    const afternoon: HydrationCheckpoint = {
+      dueMinutes: 14 * 60,
+      id: 'afternoon',
+      targetMl: 1500,
+      timeLabel: '14:00',
+    };
+
+    const requests = buildReminderRequests(
+      [morning, next, afternoon],
+      new Date(2026, 5, 30, 9, 40),
+    );
+    const nextFifteenMinuteReminder = requests.find(
+      (request) => request.checkpoint.id === 'next' && request.offsetMinutes === 15,
+    );
+
+    expect(nextFifteenMinuteReminder).toMatchObject({
+      checkpoint: next,
+      hour: 9,
+      minute: 45,
+      offsetMinutes: 15,
+    });
+    expect(nextFifteenMinuteReminder?.nextFireDate.getDate()).toBe(30);
+  });
 });

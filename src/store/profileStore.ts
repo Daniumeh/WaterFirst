@@ -1,6 +1,10 @@
 import { create } from 'zustand';
 
-import type { HydrationProfile } from '@/src/features/hydration/types';
+import type {
+  HydrationCheckpoint,
+  HydrationGoal,
+  HydrationProfile,
+} from '@/src/features/hydration/types';
 
 export const defaultProfile: HydrationProfile = {
   name: '',
@@ -21,19 +25,35 @@ export const defaultProfile: HydrationProfile = {
 };
 
 type ProfileStore = {
+  pendingOnboardingPlan: PendingOnboardingPlan | null;
   profile: HydrationProfile;
   completeOnboarding: (profile: HydrationProfile) => void;
+  clearPendingOnboardingPlan: () => void;
   resetOnboarding: () => void;
+  setPendingOnboardingPlan: (plan: PendingOnboardingPlan) => void;
   updateProfile: (profile: Partial<HydrationProfile>) => void;
 };
 
+export type PendingOnboardingPlan = {
+  appPackageNames: string[];
+  checkpoints: HydrationCheckpoint[];
+  firstLogMl: number;
+  goal: HydrationGoal;
+  profile: HydrationProfile;
+  selectedAppIds: string[];
+};
+
 export const useProfileStore = create<ProfileStore>((set) => ({
+  pendingOnboardingPlan: null,
   profile: defaultProfile,
-  completeOnboarding: (profile) => set({ profile }),
+  clearPendingOnboardingPlan: () => set({ pendingOnboardingPlan: null }),
+  completeOnboarding: (profile) => set({ pendingOnboardingPlan: null, profile }),
   resetOnboarding: () =>
     set((state) => ({
+      pendingOnboardingPlan: null,
       profile: { ...state.profile, onboardingComplete: false },
     })),
+  setPendingOnboardingPlan: (plan) => set({ pendingOnboardingPlan: plan }),
   updateProfile: (profile) =>
     set((state) => ({
       profile: { ...state.profile, ...profile },

@@ -9,6 +9,7 @@ import { getLocalMinutes } from './deviceTime';
 
 const ML_PER_OUNCE = 29.5735;
 const KG_PER_POUND = 0.453592;
+export const DEFAULT_HYDRATION_CHECKPOINT_COUNT = 6;
 
 const activityAdjustments: Record<ActivityLevel, number> = {
   light: 0,
@@ -53,22 +54,25 @@ export function generateCheckpoints(
   targetMl: number,
   wakeTime: string,
   sleepTime: string,
-  checkpointCount = 4,
+  checkpointCount = DEFAULT_HYDRATION_CHECKPOINT_COUNT,
 ): HydrationCheckpoint[] {
-  const wakeMinutes = parseTimeToMinutes(wakeTime);
-  const sleepMinutes = parseTimeToMinutes(sleepTime);
+  const safeCheckpointCount = Math.max(Math.round(checkpointCount), 1);
+  const startMinutes = normalizeMinutes(parseTimeToMinutes(wakeTime) + 30);
+  const endMinutes = normalizeMinutes(parseTimeToMinutes(sleepTime) - 60);
   const activeMinutes =
-    sleepMinutes > wakeMinutes ? sleepMinutes - wakeMinutes : 24 * 60 - wakeMinutes + sleepMinutes;
-  const interval = activeMinutes / checkpointCount;
+    endMinutes > startMinutes ? endMinutes - startMinutes : 24 * 60 - startMinutes + endMinutes;
+  const interval = activeMinutes / Math.max(safeCheckpointCount - 1, 1);
 
-  return Array.from({ length: checkpointCount }, (_, index) => {
-    const dueMinutes = normalizeMinutes(Math.round(wakeMinutes + interval * (index + 1)));
-    const targetForCheckpoint = Math.round((targetMl / checkpointCount) * (index + 1));
+  return Array.from({ length: safeCheckpointCount }, (_, index) => {
+    const dueMinutes = normalizeMinutes(Math.round(startMinutes + interval * index));
+    const targetForCheckpoint = Math.round((targetMl / safeCheckpointCount) * (index + 1));
+    const checkpointTargetMl =
+      index === safeCheckpointCount - 1 ? targetMl : roundToNearest(targetForCheckpoint, 25);
 
     return {
       id: `checkpoint-${index + 1}`,
       dueMinutes,
-      targetMl: roundToNearest(targetForCheckpoint, 25),
+      targetMl: checkpointTargetMl,
       timeLabel: formatMinutes(dueMinutes),
     };
   });

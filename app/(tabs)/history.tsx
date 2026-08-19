@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
 import { Card, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -11,6 +12,7 @@ import {
   getLocalDateKey,
   sumLogsForLocalDate,
 } from '@/src/features/hydration/deviceTime';
+import { fetchWaterLogsForRange } from '@/src/features/hydration/hydrationRepository';
 import { formatHydrationAmount, type HydrationUnit } from '@/src/features/hydration/units';
 import type { HydrationLog } from '@/src/features/hydration/types';
 import { useHydrationStore } from '@/src/store/hydrationStore';
@@ -32,12 +34,28 @@ const weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 export default function HistoryScreen() {
   const insets = useSafeAreaInsets();
-  const logs = useHydrationStore((state) => state.logs);
+  const localLogs = useHydrationStore((state) => state.logs);
   const targetMl = useHydrationStore((state) => state.goal.targetMl);
   const now = getDeviceNow();
   const [visibleMonth, setVisibleMonth] = useState(() => getMonthStart(now));
   const [selectedDateKey, setSelectedDateKey] = useState(() => getLocalDateKey(now));
   const [unit, setUnit] = useState<HydrationUnit>('cl');
+  const visibleRange = useMemo(() => getVisibleCalendarRange(visibleMonth), [visibleMonth]);
+  const savedLogsQuery = useQuery({
+    queryKey: [
+      'water-logs',
+      'history',
+      visibleRange.start.toISOString(),
+      visibleRange.endExclusive.toISOString(),
+    ],
+    queryFn: () => fetchWaterLogsForRange(visibleRange.start, visibleRange.endExclusive),
+    retry: 1,
+    staleTime: 30_000,
+  });
+  const logs = useMemo(
+    () => mergeHydrationLogs(savedLogsQuery.data ?? [], localLogs),
+    [localLogs, savedLogsQuery.data],
+  );
 
   const calendarDays = useMemo(
     () => buildCalendarDays(visibleMonth, logs, targetMl, now),
@@ -132,6 +150,8 @@ export default function HistoryScreen() {
 
       <DailySummaryCard
         day={selectedDay}
+        errorMessage={savedLogsQuery.isError ? 'Saved history could not refresh. Showing local logs for now.' : null}
+        isLoading={savedLogsQuery.isFetching}
         logs={selectedLogs}
         targetMl={targetMl}
         unit={unit}
@@ -236,12 +256,14 @@ function ProgressRing({ children, muted, progress }: ProgressRingProps) {
 
 type DailySummaryCardProps = {
   day: CalendarDay;
+  errorMessage: string | null;
+  isLoading: boolean;
   logs: HydrationLog[];
   targetMl: number;
   unit: HydrationUnit;
 };
 
-function DailySummaryCard({ day, logs, targetMl, unit }: DailySummaryCardProps) {
+function DailySummaryCard({ day, errorMessage, isLoading, logs, targetMl, unit }: DailySummaryCardProps) {
   const message = getEncouragingMessage(day.percentComplete);
 
   return (
@@ -264,6 +286,8 @@ function DailySummaryCard({ day, logs, targetMl, unit }: DailySummaryCardProps) 
         </View>
 
         <Text style={styles.message}>{message}</Text>
+        {isLoading ? <Text style={styles.syncText}>Refreshing saved logs...</Text> : null}
+        {errorMessage ? <Text style={styles.warningText}>{errorMessage}</Text> : null}
 
         <View style={styles.logList}>
           <Text style={styles.logTitle}>Entries</Text>
@@ -298,8 +322,7 @@ function SummaryMetric({ label, value }: SummaryMetricProps) {
 }
 
 function buildCalendarDays(monthStart: Date, logs: HydrationLog[], targetMl: number, now: Date) {
-  const firstVisibleDate = new Date(monthStart.getFullYear(), monthStart.getMonth(), 1);
-  firstVisibleDate.setDate(firstVisibleDate.getDate() - firstVisibleDate.getDay());
+  const { start: firstVisibleDate } = getVisibleCalendarRange(monthStart);
 
   return Array.from({ length: 42 }, (_, index) => {
     const date = new Date(firstVisibleDate);
@@ -341,6 +364,36 @@ function getMonthStart(date: Date) {
 
 function addMonths(date: Date, amount: number) {
   return new Date(date.getFullYear(), date.getMonth() + amount, 1);
+}
+
+function getVisibleCalendarRange(monthStart: Date) {
+  const start = new Date(monthStart.getFullYear(), monthStart.getMonth(), 1);
+  start.setDate(start.getDate() - start.getDay());
+  start.setHours(0, 0, 0, 0);
+
+  const endExclusive = new Date(start);
+  endExclusive.setDate(start.getDate() + 42);
+
+  return { endExclusive, start };
+}
+
+function mergeHydrationLogs(savedLogs: HydrationLog[], localLogs: HydrationLog[]) {
+  const seen = new Set<string>();
+  const merged: HydrationLog[] = [];
+
+  [...savedLogs, ...localLogs].forEach((log) => {
+    const stableKey = `${log.loggedAt}:${log.amountMl}`;
+
+    if (seen.has(log.id) || seen.has(stableKey)) {
+      return;
+    }
+
+    seen.add(log.id);
+    seen.add(stableKey);
+    merged.push(log);
+  });
+
+  return merged;
 }
 
 function parseLocalDateKey(dateKey: string) {
@@ -605,6 +658,14 @@ const styles = StyleSheet.create({
     ...typography.h2,
     padding: spacing.md,
     backgroundColor: 'rgba(3, 16, 28, 0.48)',
+  },
+  syncText: {
+    color: colors.muted,
+    ...typography.body2,
+  },
+  warningText: {
+    color: colors.orange,
+    ...typography.body2,
   },
   logList: {
     gap: spacing.sm,

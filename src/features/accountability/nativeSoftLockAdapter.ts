@@ -10,11 +10,13 @@ import {
   openAccessibilitySettings as openNativeAccessibilitySettings,
   presentApplicationPicker as presentNativeApplicationPicker,
   requestAuthorization as requestNativeAuthorization,
+  syncSoftLockState as syncNativeSoftLockState,
   softLockPreviewMessage,
   type ActivateSoftLockInput,
   type DeactivateSoftLockInput,
   type SoftLockAuthorizationStatus,
   type SoftLockNativeStatus,
+  type SyncSoftLockStateInput,
 } from 'waterfirst-soft-lock';
 
 export type SoftLockRuntime = 'iosNative' | 'androidPreview' | 'webPreview' | 'expoGoUnsupported';
@@ -51,7 +53,7 @@ function unsupportedStatus(runtime: SoftLockRuntime): SoftLockAdapterStatus {
     message:
       runtime === 'webPreview'
         ? softLockPreviewMessage
-        : 'Actual app blocking requires a Waterfirst native development build. Android currently runs Soft Lock in preview mode without restricting other apps.',
+        : 'Actual app blocking requires a Waterfirst native development build.',
   };
 }
 
@@ -119,7 +121,7 @@ export async function presentSoftLockApplicationPicker() {
 
   if (runtime === 'androidPreview') {
     throw new Error(
-      'Android app selection is not available yet. Waterfirst Android uses preview mode and does not restrict external apps.',
+      'Android app selection is handled by the WaterFirst Hydration Shield setup screen.',
     );
   }
 
@@ -138,6 +140,16 @@ export async function activateSoftLock(input: ActivateSoftLockInput) {
   }
 
   return activateNativeSoftLock(input);
+}
+
+export async function syncSoftLockState(input: SyncSoftLockStateInput) {
+  const runtime = getRuntime();
+
+  if (runtime !== 'androidPreview') {
+    return;
+  }
+
+  return syncNativeSoftLockState(input);
 }
 
 export async function deactivateSoftLock(input: DeactivateSoftLockInput) {

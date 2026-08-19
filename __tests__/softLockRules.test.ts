@@ -45,4 +45,22 @@ describe('soft lock rules', () => {
       }),
     ).toBe(false);
   });
+
+  it('does not trigger a checkpoint that was satisfied by early logging', () => {
+    expect(
+      shouldTriggerSoftLock({
+        checkpoints: [
+          { id: 'checkpoint-1', dueMinutes: 8 * 60, targetMl: 500, timeLabel: '08:00' },
+          { id: 'checkpoint-2', dueMinutes: 10 * 60, targetMl: 1000, timeLabel: '10:00' },
+          { id: 'checkpoint-3', dueMinutes: 12 * 60, targetMl: 1500, timeLabel: '12:00' },
+        ],
+        loggedMl: 1000,
+        now: new Date(2026, 5, 30, 10, 0),
+        selectedApplicationCount: 1,
+        softLockEnabled: true,
+        snoozedUntil: null,
+        overrideCount: 0,
+      }),
+    ).toBe(false);
+  });
 });

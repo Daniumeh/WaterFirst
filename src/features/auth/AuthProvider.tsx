@@ -11,6 +11,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const setAuthLoading = useAuthStore((state) => state.setAuthLoading);
   const setSession = useAuthStore((state) => state.setSession);
   const completeOnboarding = useProfileStore((state) => state.completeOnboarding);
+  const pendingOnboardingPlan = useProfileStore((state) => state.pendingOnboardingPlan);
 
   useEffect(() => {
     if (!supabase) {
@@ -30,7 +31,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
         setAuthError(error?.message ?? null);
         setSession(data.session);
-        if (data.session?.user) {
+        if (data.session?.user && !pendingOnboardingPlan) {
           completeOnboarding(buildProfileFromUser(data.session.user));
         }
       })
@@ -48,7 +49,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setAuthError(null);
       setSession(session);
-      if (session?.user) {
+      if (session?.user && !useProfileStore.getState().pendingOnboardingPlan) {
         completeOnboarding(buildProfileFromUser(session.user));
       }
     });
@@ -78,7 +79,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       linkingSubscription.remove();
       subscription.unsubscribe();
     };
-  }, [completeOnboarding, setAuthError, setAuthLoading, setSession]);
+  }, [completeOnboarding, pendingOnboardingPlan, setAuthError, setAuthLoading, setSession]);
 
   return children;
 }

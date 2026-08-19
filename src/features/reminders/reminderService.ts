@@ -26,7 +26,7 @@ export type ScheduledReminder = {
 const notificationChannelId = 'hydration-checkpoints';
 
 const reminderMessages: Record<number, string> = {
-  15: 'Hydration checkpoint coming up. Get ready to drink some water.',
+  15: 'Next water schedule in 15 minutes. Get ready to drink some water.',
   5: 'Almost time to hydrate. Your kidneys will thank you.',
   0: 'Time to drink water. Log your intake now.',
 };
@@ -49,6 +49,8 @@ export async function requestReminderPermissions() {
       status: 'unsupported',
     };
   }
+
+  await ensureNotificationChannel();
 
   const existing = await Notifications.getPermissionsAsync();
 
@@ -155,7 +157,7 @@ async function ensureNotificationChannel() {
   }
 
   await Notifications.setNotificationChannelAsync(notificationChannelId, {
-    importance: Notifications.AndroidImportance.DEFAULT,
+    importance: Notifications.AndroidImportance.HIGH,
     name: 'Hydration checkpoints',
     vibrationPattern: [0, 250, 250, 250],
   });

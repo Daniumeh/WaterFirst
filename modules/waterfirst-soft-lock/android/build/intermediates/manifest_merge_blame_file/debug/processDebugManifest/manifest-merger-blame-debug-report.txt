@@ -5,29 +5,42 @@
 5    <uses-sdk android:minSdkVersion="24" />
 6
 7    <application>
-7-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:2:3-15:17
-8        <service
-8-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:3:5-14:15
-9            android:name="com.waterfirst.softlock.WaterfirstAccessibilityService"
-9-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:4:7-76
-10            android:exported="false"
-10-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:5:7-31
-11            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" >
-11-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:6:7-73
-12            <intent-filter>
-12-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:7:7-9:23
-13                <action android:name="android.accessibilityservice.AccessibilityService" />
-13-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:8:9-84
-13-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:8:17-81
-14            </intent-filter>
-15
-16            <meta-data
-16-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:11:7-13:68
-17                android:name="android.accessibilityservice"
-17-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:12:9-52
-18                android:resource="@xml/waterfirst_accessibility_service" />
-18-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:13:9-65
-19        </service>
-20    </application>
-21
-22</manifest>
+7-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:2:3-22:17
+8        <activity
+8-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:3:5-8:67
+9            android:name="com.waterfirst.softlock.WaterfirstBlockingActivity"
+9-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:4:7-72
+10            android:excludeFromRecents="true"
+10-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:5:7-40
+11            android:exported="false"
+11-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:6:7-31
+12            android:launchMode="singleTask"
+12-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:7:7-38
+13            android:theme="@android:style/Theme.Material.NoActionBar" />
+13-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:8:7-64
+14
+15        <service
+15-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:10:5-21:15
+16            android:name="com.waterfirst.softlock.WaterfirstAccessibilityService"
+16-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:11:7-76
+17            android:exported="false"
+17-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:12:7-31
+18            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" >
+18-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:13:7-73
+19            <intent-filter>
+19-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:14:7-16:23
+20                <action android:name="android.accessibilityservice.AccessibilityService" />
+20-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:15:9-84
+20-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:15:17-81
+21            </intent-filter>
+22
+23            <meta-data
+23-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:18:7-20:68
+24                android:name="android.accessibilityservice"
+24-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:19:9-52
+25                android:resource="@xml/waterfirst_accessibility_service" />
+25-->C:\Users\PC\Documents\Waterfirst\modules\waterfirst-soft-lock\android\src\main\AndroidManifest.xml:20:9-65
+26        </service>
+27    </application>
+28
+29</manifest>

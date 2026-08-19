@@ -1,19 +1,16 @@
-import { SymbolView } from 'expo-symbols';
-import type { ColorValue, StyleProp, ViewStyle } from 'react-native';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import type { ComponentProps } from 'react';
+import type { ColorValue, StyleProp, TextStyle } from 'react-native';
 
 import { colors } from '@/src/theme/tokens';
 
-type DashboardIconName = {
-  ios: string;
-  android: string;
-  web: string;
-};
+type MaterialIconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
 type DashboardIconProps = {
   color?: ColorValue;
-  name: DashboardIconName;
+  name: MaterialIconName;
   size?: number;
-  style?: StyleProp<ViewStyle>;
+  style?: StyleProp<TextStyle>;
 };
 
 export function DashboardIcon({
@@ -22,20 +19,20 @@ export function DashboardIcon({
   size = 22,
   style,
 }: DashboardIconProps) {
-  return <SymbolView name={name as never} size={size} tintColor={color as string} style={style} />;
+  return <MaterialCommunityIcons name={name} size={size} color={color as string} style={style} />;
 }
 
 export const dashboardIcons = {
-  bell: { ios: 'bell', android: 'notifications', web: 'notifications' },
-  bottle: { ios: 'waterbottle', android: 'water_bottle', web: 'water_bottle' },
-  calendar: { ios: 'calendar', android: 'calendar_month', web: 'calendar_month' },
-  chevronRight: { ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' },
-  cup: { ios: 'cup.and.saucer', android: 'local_drink', web: 'local_drink' },
-  droplet: { ios: 'drop', android: 'water_drop', web: 'water_drop' },
-  history: { ios: 'clock.arrow.circlepath', android: 'history', web: 'history' },
-  home: { ios: 'house', android: 'home', web: 'home' },
-  lock: { ios: 'lock.shield', android: 'shield_lock', web: 'shield_lock' },
-  profile: { ios: 'person', android: 'person', web: 'person' },
-  reminder: { ios: 'bell.badge', android: 'notifications_active', web: 'notifications_active' },
-  shield: { ios: 'shield', android: 'shield', web: 'shield' },
-};
+  bell: 'bell-outline',
+  bottle: 'bottle-soda-classic-outline',
+  calendar: 'calendar-month-outline',
+  chevronRight: 'chevron-right',
+  cup: 'cup-water',
+  droplet: 'water-outline',
+  history: 'history',
+  home: 'home-variant-outline',
+  lock: 'shield-lock-outline',
+  profile: 'account-outline',
+  reminder: 'bell-badge-outline',
+  shield: 'shield-outline',
+} satisfies Record<string, MaterialIconName>;

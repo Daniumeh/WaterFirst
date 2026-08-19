@@ -101,6 +101,45 @@ export function getActionCheckpoint(
   return checkpoints.find((checkpoint) => checkpoint.targetMl > consumedMl) ?? null;
 }
 
+export function getNextUpcomingCheckpoint(
+  checkpoints: HydrationCheckpoint[],
+  now = getDeviceNow(),
+) {
+  if (checkpoints.length === 0) {
+    return null;
+  }
+
+  const currentMinutes = getLocalMinutes(now);
+  const sortedCheckpoints = [...checkpoints].sort((left, right) => left.dueMinutes - right.dueMinutes);
+
+  return (
+    sortedCheckpoints.find((checkpoint) => checkpoint.dueMinutes > currentMinutes) ??
+    sortedCheckpoints[0]
+  );
+}
+
+export function getNextEnforceableCheckpoint(
+  checkpoints: HydrationCheckpoint[],
+  consumedMl: number,
+  now = getDeviceNow(),
+) {
+  if (checkpoints.length === 0) {
+    return null;
+  }
+
+  const currentMinutes = getLocalMinutes(now);
+  const sortedCheckpoints = [...checkpoints].sort((left, right) => left.dueMinutes - right.dueMinutes);
+  const unsatisfiedCheckpoints = sortedCheckpoints.filter(
+    (checkpoint) => consumedMl < checkpoint.targetMl,
+  );
+
+  return (
+    unsatisfiedCheckpoints.find((checkpoint) => checkpoint.dueMinutes <= currentMinutes) ??
+    unsatisfiedCheckpoints.find((checkpoint) => checkpoint.dueMinutes > currentMinutes) ??
+    null
+  );
+}
+
 export function calculateComplianceScore(
   checkpoints: HydrationCheckpoint[],
   consumedMl: number,

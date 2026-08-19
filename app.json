@@ -5,6 +5,8 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
+    "backgroundColor": "#03101C",
+    "primaryColor": "#03101C",
     "scheme": "waterfirst",
     "userInterfaceStyle": "automatic",
     "ios": {

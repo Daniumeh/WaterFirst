@@ -1,39 +1,53 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { router } from 'expo-router';
 import { Alert, AppState, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Button, Card, ProgressBar, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   deactivateSoftLock,
   getLastDetectedPackageForDebug,
+  getSoftLockStatus,
   isAccessibilityServiceEnabled,
   openAccessibilitySettings,
 } from '@/src/features/accountability/nativeSoftLockAdapter';
+import type { SoftLockAdapterStatus } from '@/src/features/accountability/nativeSoftLockAdapter';
+import { getProtectedAppsByIds } from '@/src/features/accountability/protectedApps';
 import { useAccountabilityStore } from '@/src/store/accountabilityStore';
 import { useHydrationStore } from '@/src/store/hydrationStore';
 import { useProfileStore } from '@/src/store/profileStore';
-import { colors, radius, shadow, spacing, typography } from '@/src/theme/tokens';
+import { colors, glassShadow, radius, spacing, typography } from '@/src/theme/tokens';
 
 const quickLogMl = 250;
 
 export default function SoftLockScreen() {
   const insets = useSafeAreaInsets();
   const [accessibilityEnabled, setAccessibilityEnabled] = useState<boolean | null>(null);
+  const [nativeStatus, setNativeStatus] = useState<SoftLockAdapterStatus | null>(null);
   const { progress, logWater } = useHydrationStore();
   const profile = useProfileStore((state) => state.profile);
   const {
     activeShield,
     dailySkipCount,
     dailySkipLimit,
+    protectedAppIds,
     selectedApplicationCount,
     skipForNow,
   } = useAccountabilityStore();
+  const protectedApps = useMemo(() => getProtectedAppsByIds(protectedAppIds), [protectedAppIds]);
   const shieldedAppCount =
     selectedApplicationCount || profile.softLockSelectedApplicationCount;
   const topSafePadding = Math.max(insets.top, 24);
   const bottomSafePadding = Math.max(insets.bottom, 24);
-  const requiredTotalMl = activeShield?.requiredAmountMl ?? progress.loggedMl + quickLogMl;
+  const nativeRequiredAmountMl =
+    nativeStatus?.isActive && nativeStatus.requiredAmountCl
+      ? nativeStatus.requiredAmountCl * 10
+      : null;
+  const nativeActiveSessionId = nativeStatus?.isActive ? nativeStatus.activeSessionId : null;
+  const requiredTotalMl =
+    activeShield?.requiredAmountMl ??
+    (nativeRequiredAmountMl ? progress.loggedMl + nativeRequiredAmountMl : progress.loggedMl + quickLogMl);
   const amountToLogMl = Math.max(requiredTotalMl - progress.loggedMl, quickLogMl);
   const skipsRemaining = Math.max(dailySkipLimit - dailySkipCount, 0);
   const refreshAccessibilityStatus = useCallback(async () => {
@@ -41,7 +55,13 @@ export default function SoftLockScreen() {
       return;
     }
 
-    setAccessibilityEnabled(await isAccessibilityServiceEnabled());
+    const [enabled, status] = await Promise.all([
+      isAccessibilityServiceEnabled(),
+      getSoftLockStatus(),
+    ]);
+
+    setAccessibilityEnabled(enabled);
+    setNativeStatus(status);
   }, []);
 
   useEffect(() => {
@@ -73,16 +93,16 @@ export default function SoftLockScreen() {
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
     >
-      <View style={styles.cyanBlock} />
       <Card mode="contained" style={styles.card}>
         <Card.Content style={styles.content}>
-          <View style={styles.powerButton}>
-            <Text style={styles.powerIcon} variant="headlineLarge">
-              0
-            </Text>
+          <View style={styles.shieldHalo}>
+            <MaterialCommunityIcons name="shield-lock-outline" color={colors.cyan} size={92} />
+            <View style={styles.waterDropBadge}>
+              <MaterialCommunityIcons name="water-outline" color={colors.text} size={22} />
+            </View>
           </View>
           <Text style={styles.kicker} variant="labelLarge">
-            Soft lock active
+            Hydration Shield
           </Text>
           <Text style={styles.title} variant="headlineSmall">
             Hydration check-in
@@ -92,8 +112,19 @@ export default function SoftLockScreen() {
           </Text>
           {shieldedAppCount > 0 ? (
             <View style={styles.shieldPanel}>
-              <Text style={styles.panelLabel}>Shielded selection</Text>
-              <Text style={styles.panelValue}>{shieldedAppCount} apps, categories, or domains</Text>
+              <View style={styles.panelHeader}>
+                <Text style={styles.panelLabel}>Protected apps</Text>
+                <Text style={styles.panelValue}>{shieldedAppCount}</Text>
+              </View>
+              {protectedApps.length > 0 ? (
+                <View style={styles.protectedAppRow}>
+                  {protectedApps.slice(0, 4).map((app) => (
+                    <View key={app.id} style={styles.protectedAppIcon}>
+                      <MaterialCommunityIcons name={app.icon} color={app.tint} size={18} />
+                    </View>
+                  ))}
+                </View>
+              ) : null}
             </View>
           ) : null}
           {activeShield ? (
@@ -113,13 +144,24 @@ export default function SoftLockScreen() {
           <Button
             mode="contained"
             style={styles.primaryButton}
-            onPress={() => {
+            onPress={async () => {
               logWater(amountToLogMl);
+
+              if (!activeShield && nativeActiveSessionId) {
+                await deactivateSoftLock({
+                  reason: 'water_logged',
+                  sessionId: nativeActiveSessionId,
+                });
+              }
+
               router.replace('/(tabs)');
             }}
           >
             Log {amountToLogMl} ml and continue
           </Button>
+          <Text style={styles.caption}>
+            WaterFirst removes the shield after you log the required amount.
+          </Text>
           <Button
             mode="outlined"
             textColor={colors.cyanSoft}
@@ -129,6 +171,11 @@ export default function SoftLockScreen() {
                   await deactivateSoftLock({
                     reason: 'skip',
                     sessionId: activeShield.checkpointId,
+                  });
+                } else if (nativeActiveSessionId) {
+                  await deactivateSoftLock({
+                    reason: 'skip',
+                    sessionId: nativeActiveSessionId,
                   });
                 }
 
@@ -208,41 +255,36 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     backgroundColor: colors.ink,
   },
-  cyanBlock: {
-    position: 'absolute',
-    right: -60,
-    bottom: -40,
-    width: 220,
-    height: 170,
-    borderTopLeftRadius: 44,
-    backgroundColor: colors.cyan,
-    opacity: 0.9,
-  },
   card: {
     borderColor: colors.border,
     borderRadius: radius.xl,
     borderWidth: 1,
     backgroundColor: colors.midnight,
-    ...shadow,
+    ...glassShadow,
   },
   content: {
     alignItems: 'center',
     gap: spacing.lg,
+    padding: spacing.xl,
   },
-  powerButton: {
+  shieldHalo: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 118,
-    height: 118,
-    borderColor: colors.cyanSoft,
-    borderRadius: 59,
-    borderWidth: 2,
-    backgroundColor: colors.cyan,
-    ...shadow,
+    width: 132,
+    height: 132,
+    borderRadius: 66,
+    backgroundColor: 'rgba(32, 199, 255, 0.09)',
   },
-  powerIcon: {
-    color: colors.text,
-    ...typography.h1,
+  waterDropBadge: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'absolute',
+    right: 12,
+    bottom: 18,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: colors.blue,
   },
   kicker: {
     color: colors.orange,
@@ -277,6 +319,24 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     padding: spacing.md,
     backgroundColor: colors.panel,
+  },
+  panelHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  protectedAppRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  protectedAppIcon: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    backgroundColor: 'rgba(3, 16, 28, 0.62)',
   },
   androidDebugPanel: {
     alignSelf: 'stretch',

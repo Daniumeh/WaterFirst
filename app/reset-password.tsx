@@ -12,6 +12,8 @@ export default function ResetPasswordScreen() {
   const insets = useSafeAreaInsets();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -90,7 +92,15 @@ export default function ResetPasswordScreen() {
             <TextInput
               label="New password"
               mode="outlined"
-              secureTextEntry
+              right={
+                <TextInput.Icon
+                  color={colors.muted}
+                  forceTextInputFocus={false}
+                  icon={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
+                  onPress={() => setIsPasswordVisible((current) => !current)}
+                />
+              }
+              secureTextEntry={!isPasswordVisible}
               style={styles.input}
               value={password}
               onChangeText={setPassword}
@@ -98,7 +108,15 @@ export default function ResetPasswordScreen() {
             <TextInput
               label="Confirm password"
               mode="outlined"
-              secureTextEntry
+              right={
+                <TextInput.Icon
+                  color={colors.muted}
+                  forceTextInputFocus={false}
+                  icon={isConfirmPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
+                  onPress={() => setIsConfirmPasswordVisible((current) => !current)}
+                />
+              }
+              secureTextEntry={!isConfirmPasswordVisible}
               style={styles.input}
               value={confirmPassword}
               onChangeText={setConfirmPassword}

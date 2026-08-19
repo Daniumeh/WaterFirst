@@ -31,6 +31,11 @@ export function QuickLogWater({
   unit,
 }: QuickLogWaterProps) {
   const [customVisible, setCustomVisible] = useState(false);
+  const [failedImageAmounts, setFailedImageAmounts] = useState<Record<number, boolean>>({});
+
+  const markImageFailed = (amountMl: number) => {
+    setFailedImageAmounts((current) => ({ ...current, [amountMl]: true }));
+  };
 
   return (
     <Card mode="contained" style={styles.card}>
@@ -46,7 +51,11 @@ export function QuickLogWater({
               style={({ pressed }) => [styles.quickTile, pressed && styles.pressedTile]}
               onPress={() => onLog(amountMl)}
             >
-              <WaterOptionIcon amountMl={amountMl} />
+              <WaterOptionIcon
+                amountMl={amountMl}
+                imageFailed={Boolean(failedImageAmounts[amountMl])}
+                onImageError={markImageFailed}
+              />
               <Text style={styles.quickText}>+{formatHydrationAmount(amountMl, unit)}</Text>
             </Pressable>
           ))}
@@ -105,19 +114,42 @@ export function QuickLogWater({
 
 type WaterOptionIconProps = {
   amountMl: number;
+  imageFailed: boolean;
+  onImageError: (amountMl: number) => void;
 };
 
-function WaterOptionIcon({ amountMl }: WaterOptionIconProps) {
-  if (amountMl === 500) {
-    return <Image source={sachetWaterImage} style={styles.sachetImage} resizeMode="contain" />;
+function WaterOptionIcon({ amountMl, imageFailed, onImageError }: WaterOptionIconProps) {
+  if (amountMl === 500 && !imageFailed) {
+    return (
+      <Image
+        source={sachetWaterImage}
+        style={styles.sachetImage}
+        resizeMode="contain"
+        onError={() => onImageError(amountMl)}
+      />
+    );
   }
 
-  if (amountMl === 750) {
-    return <Image source={bottleWater75clImage} style={styles.bottleImage75cl} resizeMode="contain" />;
+  if (amountMl === 750 && !imageFailed) {
+    return (
+      <Image
+        source={bottleWater75clImage}
+        style={styles.bottleImage75cl}
+        resizeMode="contain"
+        onError={() => onImageError(amountMl)}
+      />
+    );
   }
 
-  if (amountMl === 1500) {
-    return <Image source={bottleWater150clImage} style={styles.bottleImage150cl} resizeMode="contain" />;
+  if (amountMl === 1500 && !imageFailed) {
+    return (
+      <Image
+        source={bottleWater150clImage}
+        style={styles.bottleImage150cl}
+        resizeMode="contain"
+        onError={() => onImageError(amountMl)}
+      />
+    );
   }
 
   return (

@@ -15,6 +15,7 @@ export default function SignInScreen() {
   const completeOnboarding = useProfileStore((state) => state.completeOnboarding);
   const [email, setEmail] = useState(profile.email);
   const [password, setPassword] = useState('');
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
@@ -104,7 +105,15 @@ export default function SignInScreen() {
             <TextInput
               label="Password"
               mode="outlined"
-              secureTextEntry
+              right={
+                <TextInput.Icon
+                  color={colors.muted}
+                  forceTextInputFocus={false}
+                  icon={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
+                  onPress={() => setIsPasswordVisible((current) => !current)}
+                />
+              }
+              secureTextEntry={!isPasswordVisible}
               style={styles.input}
               value={password}
               onChangeText={setPassword}

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { router } from 'expo-router';
-import { Alert, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -12,12 +12,18 @@ import { SoftLockStatusCard } from '@/src/components/dashboard/SoftLockStatusCar
 import {
   activateSoftLock,
   getSoftLockStatus,
-  type SoftLockRuntime,
+  syncSoftLockState,
 } from '@/src/features/accountability/nativeSoftLockAdapter';
+import { getProtectedAppsByIds } from '@/src/features/accountability/protectedApps';
+import {
+  getDueSoftLockCheckpoint,
+  getRequiredLogAmountMl,
+} from '@/src/features/accountability/softLockRules';
 import {
   calculateComplianceScore,
-  getActionCheckpoint,
   getDeviceNow,
+  getLocalDateKey,
+  getNextEnforceableCheckpoint,
 } from '@/src/features/hydration/deviceTime';
 import type { HydrationUnit } from '@/src/features/hydration/units';
 import { useAccountabilityStore } from '@/src/store/accountabilityStore';
@@ -31,14 +37,17 @@ export default function DashboardScreen() {
   const profile = useProfileStore((state) => state.profile);
   const activeShield = useAccountabilityStore((state) => state.activeShield);
   const activateShield = useAccountabilityStore((state) => state.activateShield);
+  const overrideCount = useAccountabilityStore((state) => state.overrideCount);
+  const protectedAppIds = useAccountabilityStore((state) => state.protectedAppIds);
+  const protectedAppPackageNames = useAccountabilityStore((state) => state.protectedAppPackageNames);
   const releaseShield = useAccountabilityStore((state) => state.releaseShield);
   const selectedApplicationCount = useAccountabilityStore((state) => state.selectedApplicationCount);
   const setSelectedApplicationCount = useAccountabilityStore((state) => state.setSelectedApplicationCount);
+  const snoozedUntil = useAccountabilityStore((state) => state.snoozedUntil);
   const { checkpoints, goal, logWater, progress, syncWithDeviceDate } = useHydrationStore();
   const [now, setNow] = useState(() => getDeviceNow());
   const [unit, setUnit] = useState<HydrationUnit>('cl');
   const [customAmount, setCustomAmount] = useState('');
-  const [softLockRuntime, setSoftLockRuntime] = useState<SoftLockRuntime | null>(null);
 
   useEffect(() => {
     syncWithDeviceDate();
@@ -52,72 +61,117 @@ export default function DashboardScreen() {
   }, [syncWithDeviceDate]);
 
   useEffect(() => {
-    setSelectedApplicationCount(profile.softLockSelectedApplicationCount);
+    if (profile.softLockSelectedApplicationCount > 0) {
+      setSelectedApplicationCount(profile.softLockSelectedApplicationCount);
+    }
   }, [profile.softLockSelectedApplicationCount, setSelectedApplicationCount]);
 
   useEffect(() => {
     void getSoftLockStatus()
       .then((status) => {
-        setSoftLockRuntime(status.runtime);
-        setSelectedApplicationCount(status.selectedApplicationCount);
+        if (status.selectedApplicationCount > 0) {
+          setSelectedApplicationCount(status.selectedApplicationCount);
+        }
       })
       .catch(() => undefined);
   }, [setSelectedApplicationCount]);
 
-  const actionCheckpoint = useMemo(
-    () => getActionCheckpoint(checkpoints, progress.loggedMl, now),
-    [checkpoints, now, progress.loggedMl],
-  );
   const complianceScore = useMemo(
     () => calculateComplianceScore(checkpoints, progress.loggedMl, now),
     [checkpoints, now, progress.loggedMl],
   );
-  const nextEnforcementTime = actionCheckpoint?.timeLabel ?? 'Tomorrow';
+  const nextEnforcementCheckpoint = useMemo(
+    () => getNextEnforceableCheckpoint(checkpoints, progress.loggedMl, now),
+    [checkpoints, now, progress.loggedMl],
+  );
+  const nextEnforcementTime = nextEnforcementCheckpoint?.timeLabel ?? 'Not scheduled';
   const firstName = profile.firstName || profile.name.split(' ')[0] || 'Lebe';
   const isCompactPhone = Math.min(width, 430) <= 360;
   const topSafePadding = Math.max(insets.top + spacing.md, spacing.lg);
   const bottomSafePadding = Math.max(insets.bottom + 96, 112);
   const greeting = getLocalGreeting(now);
+  const protectedApps = useMemo(() => getProtectedAppsByIds(protectedAppIds), [protectedAppIds]);
   const activeSelectedApplicationCount =
-    selectedApplicationCount || profile.softLockSelectedApplicationCount;
-
-  const handleTestSoftLock = async () => {
-    if (activeShield) {
-      router.push('/soft-lock');
-      return;
-    }
-
-    const sessionId = `test-${Date.now()}`;
-    const session = {
-      activatedAt: now.toISOString(),
-      checkpointId: sessionId,
-      dueTimeLabel: 'Test Soft Lock',
-      requiredAmountMl: progress.loggedMl + 250,
-    };
-
-    try {
-      await activateSoftLock({
-        activatedAt: session.activatedAt,
-        requiredAmountCl: 25,
-        sessionId,
-      });
-      activateShield(session);
-      router.push('/soft-lock');
-    } catch (error) {
-      Alert.alert(
-        'Soft Lock unavailable',
-        error instanceof Error
-          ? error.message
-          : 'Waterfirst could not activate the native Soft Lock test.',
-      );
-    }
-  };
+    protectedApps.length || selectedApplicationCount || profile.softLockSelectedApplicationCount;
+  const checkpointScheduleJson = useMemo(
+    () =>
+      JSON.stringify(
+        checkpoints.map((checkpoint) => ({
+          dueMinutes: checkpoint.dueMinutes,
+          id: checkpoint.id,
+          targetMl: checkpoint.targetMl,
+          timeLabel: checkpoint.timeLabel,
+        })),
+      ),
+    [checkpoints],
+  );
 
   useEffect(() => {
     if (activeShield && progress.loggedMl >= activeShield.requiredAmountMl) {
       releaseShield();
     }
   }, [activeShield, progress.loggedMl, releaseShield]);
+
+  useEffect(() => {
+    void syncSoftLockState({
+      checkpointScheduleJson,
+      enabled: profile.softLockConsent,
+      loggedDate: getLocalDateKey(now),
+      loggedMl: progress.loggedMl,
+      protectedPackageNames: protectedAppPackageNames,
+      snoozedUntilEpochMillis: snoozedUntil ? new Date(snoozedUntil).getTime() : 0,
+    }).catch(() => undefined);
+  }, [
+    checkpointScheduleJson,
+    now,
+    profile.softLockConsent,
+    progress.loggedMl,
+    protectedAppPackageNames,
+    snoozedUntil,
+  ]);
+
+  useEffect(() => {
+    const dueCheckpoint = getDueSoftLockCheckpoint({
+      checkpoints,
+      loggedMl: progress.loggedMl,
+      now,
+      overrideCount,
+      selectedApplicationCount: activeSelectedApplicationCount,
+      softLockEnabled: profile.softLockConsent,
+      snoozedUntil,
+    });
+
+    if (!dueCheckpoint || activeShield?.checkpointId === dueCheckpoint.id) {
+      return;
+    }
+
+    const requiredAmountMl = getRequiredLogAmountMl(dueCheckpoint, progress.loggedMl);
+
+    activateShield({
+      activatedAt: now.toISOString(),
+      checkpointId: dueCheckpoint.id,
+      dueTimeLabel: dueCheckpoint.timeLabel,
+      requiredAmountMl: dueCheckpoint.targetMl,
+    });
+
+    void activateSoftLock({
+      activatedAt: now.toISOString(),
+      protectedPackageNames: protectedAppPackageNames,
+      requiredAmountCl: Math.max(1, Math.ceil(requiredAmountMl / 10)),
+      sessionId: dueCheckpoint.id,
+    }).catch(() => undefined);
+  }, [
+    activeSelectedApplicationCount,
+    activeShield?.checkpointId,
+    activateShield,
+    checkpoints,
+    now,
+    overrideCount,
+    profile.softLockConsent,
+    progress.loggedMl,
+    protectedAppPackageNames,
+    snoozedUntil,
+  ]);
 
   return (
     <ScrollView
@@ -163,12 +217,9 @@ export default function DashboardScreen() {
         enabled={profile.softLockConsent}
         nextEnforcementTime={nextEnforcementTime}
         complianceScore={complianceScore}
-        canTestSoftLock={
-          profile.softLockConsent &&
-          (activeSelectedApplicationCount > 0 || softLockRuntime === 'androidPreview')
-        }
+        protectedApps={protectedApps}
         shieldedAppCount={activeSelectedApplicationCount}
-        onTestSoftLock={handleTestSoftLock}
+        onOpenHydrationShield={() => router.push('/hydration-shield' as never)}
       />
 
       <HydrationTimeline checkpoints={checkpoints} consumedMl={progress.loggedMl} now={now} unit={unit} />

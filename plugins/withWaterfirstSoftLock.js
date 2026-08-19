@@ -15,6 +15,7 @@ const pkg = require('../modules/waterfirst-soft-lock/package.json');
 const accessibilityDescription =
   'Waterfirst Soft Lock detects when you open apps you selected for hydration accountability. It does not read screen content, messages, passwords or typed text.';
 const accessibilityServiceClassName = 'com.waterfirst.softlock.WaterfirstAccessibilityService';
+const blockingActivityClassName = 'com.waterfirst.softlock.WaterfirstBlockingActivity';
 const accessibilityServiceXml = `<?xml version="1.0" encoding="utf-8"?>
 <accessibility-service
   xmlns:android="http://schemas.android.com/apk/res/android"
@@ -87,6 +88,7 @@ function withWaterfirstSoftLock(config, props = {}) {
       'android:usesCleartextTraffic': mainApplication.$?.['android:usesCleartextTraffic'] ?? 'false',
     };
     mainApplication.service = mainApplication.service ?? [];
+    mainApplication.activity = mainApplication.activity ?? [];
 
     const hasAccessibilityService = mainApplication.service.some(
       (service) => service.$?.['android:name'] === accessibilityServiceClassName,
@@ -118,6 +120,22 @@ function withWaterfirstSoftLock(config, props = {}) {
             },
           },
         ],
+      });
+    }
+
+    const hasBlockingActivity = mainApplication.activity.some(
+      (activity) => activity.$?.['android:name'] === blockingActivityClassName,
+    );
+
+    if (!hasBlockingActivity) {
+      mainApplication.activity.push({
+        $: {
+          'android:name': blockingActivityClassName,
+          'android:excludeFromRecents': 'true',
+          'android:exported': 'false',
+          'android:launchMode': 'singleTask',
+          'android:theme': '@android:style/Theme.Material.NoActionBar',
+        },
       });
     }
 

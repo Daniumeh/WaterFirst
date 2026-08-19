@@ -1,6 +1,8 @@
 import { StyleSheet, View } from 'react-native';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Button, Card, Text } from 'react-native-paper';
 
+import type { ProtectedApp } from '@/src/features/accountability/protectedApps';
 import { colors, glassShadow, radius, spacing, typography } from '@/src/theme/tokens';
 
 import { DashboardIcon, dashboardIcons } from './DashboardIcon';
@@ -8,20 +10,24 @@ import { DashboardIcon, dashboardIcons } from './DashboardIcon';
 type SoftLockStatusCardProps = {
   enabled: boolean;
   nextEnforcementTime: string;
-  canTestSoftLock?: boolean;
   complianceScore: number;
-  onTestSoftLock?: () => void;
+  onOpenHydrationShield: () => void;
+  protectedApps?: ProtectedApp[];
   shieldedAppCount?: number;
 };
 
 export function SoftLockStatusCard({
   enabled,
   nextEnforcementTime,
-  canTestSoftLock,
   complianceScore,
-  onTestSoftLock,
+  onOpenHydrationShield,
+  protectedApps = [],
   shieldedAppCount = 0,
 }: SoftLockStatusCardProps) {
+  const visibleApps = protectedApps.slice(0, 4);
+  const overflowCount = Math.max(protectedApps.length - visibleApps.length, 0);
+  const displayCount = protectedApps.length || shieldedAppCount;
+
   return (
     <Card mode="contained" style={styles.card}>
       <Card.Content style={styles.content}>
@@ -43,19 +49,42 @@ export function SoftLockStatusCard({
         <View style={styles.metricsRow}>
           <InfoBlock label="Next Enforcement" value={nextEnforcementTime} />
           <InfoBlock label="Compliance Score" value={`${complianceScore}%`} accent />
-          <InfoBlock label="Shielded Apps" value={`${shieldedAppCount}`} />
         </View>
 
-        {onTestSoftLock ? (
-          <Button
-            mode="contained"
-            disabled={!(canTestSoftLock ?? (enabled && shieldedAppCount > 0))}
-            onPress={onTestSoftLock}
-            style={styles.testButton}
-          >
-            Test Soft Lock
-          </Button>
-        ) : null}
+        <View style={styles.shieldedAppsPanel}>
+          <Text style={styles.shieldedLabel}>Shielded apps</Text>
+          <View style={styles.appIconRow}>
+            {visibleApps.length > 0 ? (
+              visibleApps.map((app) => (
+                <View key={app.id} style={styles.appIconTile}>
+                  <MaterialCommunityIcons name={app.icon} color={app.tint} size={24} />
+                </View>
+              ))
+            ) : (
+              <View style={styles.emptyAppTile}>
+                <MaterialCommunityIcons name="apps" color={colors.cyan} size={23} />
+              </View>
+            )}
+            {overflowCount > 0 ? (
+              <View style={styles.overflowBadge}>
+                <Text style={styles.overflowText}>+{overflowCount}</Text>
+              </View>
+            ) : null}
+          </View>
+          <Text style={styles.shieldedCount}>
+            {displayCount} {displayCount === 1 ? 'app' : 'apps'}
+          </Text>
+        </View>
+
+        <Button
+          mode="contained"
+          icon="water-outline"
+          onPress={onOpenHydrationShield}
+          style={styles.openButton}
+          contentStyle={styles.openButtonContent}
+        >
+          Open Hydration Shield
+        </Button>
       </Card.Content>
     </Card>
   );
@@ -166,8 +195,63 @@ const styles = StyleSheet.create({
   infoValueAccent: {
     color: colors.cyan,
   },
-  testButton: {
+  shieldedAppsPanel: {
+    borderColor: colors.line,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    gap: spacing.sm,
+    padding: spacing.md,
+    backgroundColor: 'rgba(3, 16, 28, 0.22)',
+  },
+  shieldedLabel: {
+    color: colors.muted,
+    ...typography.h2,
+  },
+  appIconRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  appIconTile: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0, 10, 18, 0.72)',
+  },
+  emptyAppTile: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 42,
+    height: 42,
+    borderColor: colors.line,
+    borderRadius: 12,
+    borderWidth: 1,
+    backgroundColor: 'rgba(32, 199, 255, 0.08)',
+  },
+  overflowBadge: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(20, 125, 255, 0.34)',
+  },
+  overflowText: {
+    color: colors.cyanSoft,
+    ...typography.h2,
+  },
+  shieldedCount: {
+    color: colors.muted,
+    ...typography.body1,
+  },
+  openButton: {
     borderRadius: radius.md,
-    backgroundColor: colors.cyan,
+    backgroundColor: colors.blue,
+  },
+  openButtonContent: {
+    minHeight: 54,
   },
 });

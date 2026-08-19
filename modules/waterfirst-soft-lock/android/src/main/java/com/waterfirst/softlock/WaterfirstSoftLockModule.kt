@@ -7,6 +7,7 @@ import android.provider.Settings
 import android.text.TextUtils
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
+import org.json.JSONArray
 
 class WaterfirstSoftLockModule : Module() {
   override fun definition() = ModuleDefinition {
@@ -32,6 +33,7 @@ class WaterfirstSoftLockModule : Module() {
       val sessionId = requireString(input, "sessionId")
       val requiredAmountCl = requirePositiveInt(input, "requiredAmountCl")
       val activatedAt = requireString(input, "activatedAt")
+      val protectedPackageNames = optionalStringList(input, "protectedPackageNames")
 
       if (!activatedAt.contains("T")) {
         throw IllegalArgumentException("activatedAt must be an ISO timestamp.")
@@ -49,6 +51,11 @@ class WaterfirstSoftLockModule : Module() {
         .putString(WaterfirstSoftLockKeys.activatedAtKey, activatedAt)
         .putInt(WaterfirstSoftLockKeys.requiredAmountClKey, requiredAmountCl)
         .putBoolean(WaterfirstSoftLockKeys.isActiveKey, true)
+        .apply {
+          if (protectedPackageNames != null) {
+            putStringSet(WaterfirstSoftLockKeys.protectedPackageNamesKey, protectedPackageNames.toSet())
+          }
+        }
         .apply()
     }
 
@@ -73,13 +80,41 @@ class WaterfirstSoftLockModule : Module() {
         .apply()
     }
 
+    AsyncFunction("syncSoftLockState") { input: Map<String, Any> ->
+      val protectedPackageNames = requireStringList(input, "protectedPackageNames")
+      val checkpointScheduleJson = requireString(input, "checkpointScheduleJson")
+      val loggedMl = requireNonNegativeInt(input, "loggedMl")
+      val loggedDate = requireString(input, "loggedDate")
+      val enabled = input["enabled"] as? Boolean ?: false
+      val snoozedUntilEpochMillis = requireNonNegativeLong(input, "snoozedUntilEpochMillis")
+
+      val preferences = preferences()
+
+      preferences.edit()
+        .putBoolean(WaterfirstSoftLockKeys.softLockEnabledKey, enabled)
+        .putStringSet(WaterfirstSoftLockKeys.protectedPackageNamesKey, protectedPackageNames.toSet())
+        .putString(WaterfirstSoftLockKeys.checkpointScheduleJsonKey, checkpointScheduleJson)
+        .putInt(WaterfirstSoftLockKeys.loggedMlKey, loggedMl)
+        .putString(WaterfirstSoftLockKeys.loggedDateKey, loggedDate)
+        .putLong(WaterfirstSoftLockKeys.snoozedUntilEpochMillisKey, snoozedUntilEpochMillis)
+        .apply()
+
+      clearSatisfiedActiveSession(preferences, checkpointScheduleJson, loggedMl)
+    }
+
     AsyncFunction("getStatus") {
+      val preferences = preferences()
+
       mapOf(
         "supported" to true,
         "authorizationStatus" to resolveAuthorizationStatus(),
-        "isActive" to false,
-        "selectedApplicationCount" to 0,
-        "activeSessionId" to null
+        "isActive" to preferences.getBoolean(WaterfirstSoftLockKeys.isActiveKey, false),
+        "selectedApplicationCount" to preferences.getStringSet(
+          WaterfirstSoftLockKeys.protectedPackageNamesKey,
+          emptySet()
+        ).orEmpty().size,
+        "activeSessionId" to preferences.getString(WaterfirstSoftLockKeys.activeSessionIdKey, null),
+        "requiredAmountCl" to preferences.getInt(WaterfirstSoftLockKeys.requiredAmountClKey, 0)
       )
     }
 
@@ -88,7 +123,9 @@ class WaterfirstSoftLockModule : Module() {
     }
 
     AsyncFunction("clearApplicationSelection") {
-      Unit
+      preferences().edit()
+        .remove(WaterfirstSoftLockKeys.protectedPackageNamesKey)
+        .apply()
     }
   }
 
@@ -140,6 +177,50 @@ class WaterfirstSoftLockModule : Module() {
     }
   }
 
+  private fun clearSatisfiedActiveSession(
+    preferences: android.content.SharedPreferences,
+    checkpointScheduleJson: String,
+    loggedMl: Int
+  ) {
+    if (!preferences.getBoolean(WaterfirstSoftLockKeys.isActiveKey, false)) {
+      return
+    }
+
+    val activeSessionId = preferences.getString(WaterfirstSoftLockKeys.activeSessionIdKey, null)
+      ?: return
+    val activeTargetMl = getCheckpointTargetMl(checkpointScheduleJson, activeSessionId)
+      ?: return
+
+    if (loggedMl < activeTargetMl) {
+      return
+    }
+
+    preferences.edit()
+      .remove(WaterfirstSoftLockKeys.activeSessionIdKey)
+      .remove(WaterfirstSoftLockKeys.activatedAtKey)
+      .remove(WaterfirstSoftLockKeys.requiredAmountClKey)
+      .putBoolean(WaterfirstSoftLockKeys.isActiveKey, false)
+      .apply()
+  }
+
+  private fun getCheckpointTargetMl(checkpointScheduleJson: String, checkpointId: String): Int? {
+    return try {
+      val checkpoints = JSONArray(checkpointScheduleJson)
+
+      for (index in 0 until checkpoints.length()) {
+        val checkpoint = checkpoints.optJSONObject(index) ?: continue
+
+        if (checkpoint.optString("id") == checkpointId) {
+          return checkpoint.optInt("targetMl", -1).takeIf { it >= 0 }
+        }
+      }
+
+      null
+    } catch (_: Exception) {
+      null
+    }
+  }
+
   private fun resolveAuthorizationStatus(): String {
     return try {
       val enabled = isAccessibilityServiceEnabled()
@@ -188,5 +269,55 @@ class WaterfirstSoftLockModule : Module() {
     }
 
     return value
+  }
+
+  private fun requireNonNegativeInt(input: Map<String, Any>, fieldName: String): Int {
+    val value = when (val rawValue = input[fieldName]) {
+      is Int -> rawValue
+      is Double -> rawValue.toInt()
+      is Float -> rawValue.toInt()
+      is Number -> rawValue.toInt()
+      else -> null
+    }
+
+    if (value == null || value < 0) {
+      throw IllegalArgumentException("$fieldName must be zero or greater.")
+    }
+
+    return value
+  }
+
+  private fun requireNonNegativeLong(input: Map<String, Any>, fieldName: String): Long {
+    val value = when (val rawValue = input[fieldName]) {
+      is Long -> rawValue
+      is Int -> rawValue.toLong()
+      is Double -> rawValue.toLong()
+      is Float -> rawValue.toLong()
+      is Number -> rawValue.toLong()
+      else -> null
+    }
+
+    if (value == null || value < 0L) {
+      throw IllegalArgumentException("$fieldName must be zero or greater.")
+    }
+
+    return value
+  }
+
+  private fun requireStringList(input: Map<String, Any>, fieldName: String): List<String> {
+    val rawList = input[fieldName] as? List<*>
+      ?: throw IllegalArgumentException("$fieldName must be a list.")
+
+    return rawList.mapNotNull { value ->
+      (value as? String)?.trim()?.takeIf { it.isNotBlank() }
+    }
+  }
+
+  private fun optionalStringList(input: Map<String, Any>, fieldName: String): List<String>? {
+    if (!input.containsKey(fieldName)) {
+      return null
+    }
+
+    return requireStringList(input, fieldName)
   }
 }

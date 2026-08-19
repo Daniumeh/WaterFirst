@@ -2,6 +2,7 @@ type NativeSoftLockMocks = {
   requestAuthorization: jest.Mock;
   isAccessibilityServiceEnabled: jest.Mock;
   openAccessibilitySettings: jest.Mock;
+  syncSoftLockState: jest.Mock;
   getStatus: jest.Mock;
   getLastDetectedPackageForDebug: jest.Mock;
 };
@@ -13,6 +14,7 @@ function createNativeMocks(): NativeSoftLockMocks {
     requestAuthorization: jest.fn(async () => 'notDetermined'),
     isAccessibilityServiceEnabled: jest.fn(async () => false),
     openAccessibilitySettings: jest.fn(async () => undefined),
+    syncSoftLockState: jest.fn(async () => undefined),
     getStatus: jest.fn(async () => ({
       supported: true,
       authorizationStatus: 'notDetermined',
@@ -129,6 +131,21 @@ describe('native soft lock adapter accessibility foundation', () => {
     nativeMocks.getLastDetectedPackageForDebug.mockResolvedValueOnce('com.example.app');
 
     await expect(adapter.getLastDetectedPackageForDebug()).resolves.toBe('com.example.app');
+  });
+
+  it('syncs Android Soft Lock state through the native method', async () => {
+    const adapter = loadAdapter('android');
+    const input = {
+      checkpointScheduleJson: '[]',
+      enabled: true,
+      loggedDate: '2026-08-06',
+      loggedMl: 500,
+      protectedPackageNames: ['com.instagram.android'],
+      snoozedUntilEpochMillis: 0,
+    };
+
+    await expect(adapter.syncSoftLockState(input)).resolves.toBeUndefined();
+    expect(nativeMocks.syncSoftLockState).toHaveBeenCalledWith(input);
   });
 
   it('stays safe on web without calling native methods', async () => {

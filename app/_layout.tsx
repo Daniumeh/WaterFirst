@@ -8,7 +8,8 @@ import {
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import 'react-native-reanimated';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -36,6 +37,7 @@ const queryClient = new QueryClient();
 configureNotificationPresentation();
 
 export default function RootLayout() {
+  const [fontLoadTimedOut, setFontLoadTimedOut] = useState(false);
   const [loaded, error] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
@@ -51,12 +53,18 @@ export default function RootLayout() {
   }, [error]);
 
   useEffect(() => {
-    if (loaded) {
+    const timeout = setTimeout(() => setFontLoadTimedOut(true), 3000);
+
+    return () => clearTimeout(timeout);
+  }, []);
+
+  useEffect(() => {
+    if (loaded || fontLoadTimedOut) {
       SplashScreen.hideAsync();
     }
-  }, [loaded]);
+  }, [fontLoadTimedOut, loaded]);
 
-  if (!loaded) {
+  if (!loaded && !fontLoadTimedOut) {
     return null;
   }
 
@@ -67,15 +75,22 @@ function RootLayoutNav() {
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
-        <PaperProvider theme={waterFirstTheme}>
+        <PaperProvider
+          theme={waterFirstTheme}
+          settings={{
+            icon: (props) => <MaterialCommunityIcons {...props} />,
+          }}
+        >
           <AuthProvider>
             <AppScreen>
               <Stack>
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="create-account" options={{ headerShown: false }} />
                 <Stack.Screen name="onboarding" options={{ headerShown: false }} />
                 <Stack.Screen name="sign-in" options={{ headerShown: false }} />
                 <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
                 <Stack.Screen name="reset-password" options={{ headerShown: false }} />
+                <Stack.Screen name="hydration-shield" options={{ headerShown: false }} />
                 <Stack.Screen
                   name="soft-lock"
                   options={{ title: 'WaterFirst', presentation: 'modal' }}

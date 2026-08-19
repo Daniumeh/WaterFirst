@@ -26,11 +26,17 @@ describe('Android Accessibility Service source safety', () => {
     expect(source).toContain('detectedPackageName == applicationContext.packageName');
   });
 
-  it('stores only the most recent detected package for debug verification', () => {
+  it('stores recent detected and blocked packages for debug verification', () => {
     expect(source).toContain('putString(WaterfirstSoftLockKeys.lastDetectedPackageKey');
-    expect(source).not.toContain('putStringSet');
+    expect(source).toContain('putString(WaterfirstSoftLockKeys.lastBlockedPackageKey');
     expect(source).not.toContain('mutableListOf');
     expect(source).not.toContain('ArrayList');
+  });
+
+  it('checks synced protected packages and launches the blocking screen', () => {
+    expect(source).toContain('WaterfirstSoftLockKeys.protectedPackageNamesKey');
+    expect(source).toContain('protectedPackages.contains(packageName)');
+    expect(source).toContain('WaterfirstBlockingActivity::class.java');
   });
 
   it('does not read accessibility node trees or window content', () => {

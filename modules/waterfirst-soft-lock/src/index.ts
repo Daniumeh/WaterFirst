@@ -14,17 +14,28 @@ export type SoftLockNativeStatus = {
   isActive: boolean;
   selectedApplicationCount: number;
   activeSessionId: string | null;
+  requiredAmountCl?: number | null;
 };
 
 export type ActivateSoftLockInput = {
   sessionId: string;
   requiredAmountCl: number;
   activatedAt: string;
+  protectedPackageNames?: string[];
 };
 
 export type DeactivateSoftLockInput = {
   sessionId: string;
   reason: 'water_logged' | 'skip' | 'expired' | 'disabled' | 'emergency';
+};
+
+export type SyncSoftLockStateInput = {
+  checkpointScheduleJson: string;
+  enabled: boolean;
+  loggedDate: string;
+  loggedMl: number;
+  protectedPackageNames: string[];
+  snoozedUntilEpochMillis: number;
 };
 
 type WaterfirstSoftLockModule = {
@@ -34,6 +45,7 @@ type WaterfirstSoftLockModule = {
   presentApplicationPicker(): Promise<{ selectedApplicationCount: number }>;
   activateSoftLock(input: ActivateSoftLockInput): Promise<void>;
   deactivateSoftLock(input: DeactivateSoftLockInput): Promise<void>;
+  syncSoftLockState(input: SyncSoftLockStateInput): Promise<void>;
   getStatus(): Promise<SoftLockNativeStatus>;
   getLastDetectedPackageForDebug(): Promise<string | null>;
   clearApplicationSelection(): Promise<void>;
@@ -77,6 +89,13 @@ function assertValidActivationInput(input: ActivateSoftLockInput) {
 
   if (!Number.isFinite(input.requiredAmountCl) || input.requiredAmountCl <= 0) {
     throw new Error('requiredAmountCl must be greater than 0.');
+  }
+
+  if (
+    input.protectedPackageNames &&
+    !input.protectedPackageNames.every((packageName) => typeof packageName === 'string')
+  ) {
+    throw new Error('protectedPackageNames must contain only strings.');
   }
 }
 
@@ -162,6 +181,31 @@ export async function deactivateSoftLock(input: DeactivateSoftLockInput) {
   }
 
   return module.deactivateSoftLock(input);
+}
+
+export async function syncSoftLockState(input: SyncSoftLockStateInput) {
+  assertNonEmptyString(input.checkpointScheduleJson, 'checkpointScheduleJson');
+  assertNonEmptyString(input.loggedDate, 'loggedDate');
+
+  if (!Array.isArray(input.protectedPackageNames)) {
+    throw new Error('protectedPackageNames must be a list.');
+  }
+
+  if (!Number.isFinite(input.loggedMl) || input.loggedMl < 0) {
+    throw new Error('loggedMl must be zero or greater.');
+  }
+
+  if (!Number.isFinite(input.snoozedUntilEpochMillis) || input.snoozedUntilEpochMillis < 0) {
+    throw new Error('snoozedUntilEpochMillis must be zero or greater.');
+  }
+
+  const module = getNativeModule();
+
+  if (!module) {
+    return;
+  }
+
+  return module.syncSoftLockState(input);
 }
 
 export async function getStatus() {

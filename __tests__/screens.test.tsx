@@ -1,4 +1,5 @@
-import { fireEvent, render } from '@testing-library/react-native';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Provider as PaperProvider } from 'react-native-paper';
 
 import HistoryScreen from '@/app/(tabs)/history';
@@ -13,7 +14,20 @@ import { useProfileStore } from '@/src/store/profileStore';
 import { waterFirstTheme } from '@/src/theme/paperTheme';
 
 function renderWithTheme(children: React.ReactElement) {
-  return render(<PaperProvider theme={waterFirstTheme}>{children}</PaperProvider>);
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        gcTime: Infinity,
+        retry: false,
+      },
+    },
+  });
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <PaperProvider theme={waterFirstTheme}>{children}</PaperProvider>
+    </QueryClientProvider>,
+  );
 }
 
 describe('WaterFirst screens', () => {
@@ -58,9 +72,8 @@ describe('WaterFirst screens', () => {
   it('renders onboarding fields', async () => {
     const view = await renderWithTheme(<OnboardingScreen />);
 
-    expect(view.getAllByText('WaterFirst').length).toBeGreaterThan(0);
-    expect(view.getByText('Create your WaterFirst profile')).toBeTruthy();
-    expect(view.getAllByText('Full name').length).toBeGreaterThan(0);
+    expect(view.getByLabelText('WaterFirst')).toBeTruthy();
+    expect(view.queryByText('tap to begin')).toBeNull();
   });
 
   it('renders sign in fields', async () => {
@@ -88,8 +101,10 @@ describe('WaterFirst screens', () => {
   it('renders history calendar summary', async () => {
     const view = await renderWithTheme(<HistoryScreen />);
 
-    expect(view.getByText('History')).toBeTruthy();
-    expect(view.getByText('Daily summary')).toBeTruthy();
+    await waitFor(() => {
+      expect(view.getByText('History')).toBeTruthy();
+      expect(view.getByText('Daily summary')).toBeTruthy();
+    });
   });
 
   it('logs a preset amount from the today screen', async () => {
