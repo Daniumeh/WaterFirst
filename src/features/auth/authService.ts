@@ -6,9 +6,11 @@ import type { HydrationProfile } from '@/src/features/hydration/types';
 import { supabase } from '@/src/lib/supabase';
 
 type SignUpWithProfileInput = {
+  appPackageNames?: string[];
   email: string;
   password: string;
   profile: HydrationProfile;
+  selectedAppIds?: string[];
 };
 
 type AuthResult = {
@@ -20,6 +22,11 @@ type AuthResult = {
 type SignInWithEmailInput = {
   email: string;
   password: string;
+};
+
+type ProtectedAppsFromUser = {
+  appPackageNames: string[];
+  selectedAppIds: string[];
 };
 
 export function getResetRedirectUrl() {
@@ -55,6 +62,30 @@ function readAuthRedirectParams(url: string) {
   }
 
   return params;
+}
+
+function readNumberMetadata(value: unknown, fallback: number) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return fallback;
+}
+
+function readStringArrayMetadata(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((item): item is string => typeof item === 'string' && item.length > 0);
 }
 
 export function buildProfileFromUser(user: User): HydrationProfile {
@@ -93,15 +124,29 @@ export function buildProfileFromUser(user: User): HydrationProfile {
     unitPreference: metadata.unit_preference === 'metric' ? 'metric' : 'imperial',
     notificationConsent: Boolean(metadata.notification_consent),
     softLockConsent: Boolean(metadata.soft_lock_consent),
-    softLockSelectedApplicationCount: 0,
+    softLockSelectedApplicationCount: readNumberMetadata(
+      metadata.soft_lock_selected_application_count,
+      0,
+    ),
     onboardingComplete: true,
   };
 }
 
+export function buildProtectedAppsFromUser(user: User): ProtectedAppsFromUser {
+  const metadata = user.user_metadata ?? {};
+
+  return {
+    appPackageNames: readStringArrayMetadata(metadata.soft_lock_selected_app_package_names),
+    selectedAppIds: readStringArrayMetadata(metadata.soft_lock_selected_app_ids),
+  };
+}
+
 export async function signUpWithProfile({
+  appPackageNames = [],
   email,
   password,
   profile,
+  selectedAppIds = [],
 }: SignUpWithProfileInput): Promise<AuthResult> {
   if (!supabase) {
     return {
@@ -127,6 +172,9 @@ export async function signUpWithProfile({
         onboarding_complete: profile.onboardingComplete,
         sleep_time: profile.sleepTime,
         soft_lock_consent: profile.softLockConsent,
+        soft_lock_selected_app_ids: selectedAppIds,
+        soft_lock_selected_app_package_names: appPackageNames,
+        soft_lock_selected_application_count: profile.softLockSelectedApplicationCount,
         unit_preference: profile.unitPreference,
         wake_time: profile.wakeTime,
         weight: profile.weight,

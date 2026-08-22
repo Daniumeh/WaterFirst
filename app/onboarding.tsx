@@ -43,11 +43,12 @@ const totalSteps = 23;
 const transitionDurationMs = 320;
 const splashAutoAdvanceMs = 2600;
 const splashAppName = 'WaterFirst';
-const onboardingCelebrationDrop = require('../assets/images/onboarding-celebration-drop.png');
-const onboardingKidneyCutaway = require('../assets/images/onboarding-kidney-cutaway.png');
-const onboardingHappyDrop = require('../assets/images/onboarding-happy-drop.png');
-const onboardingSadKidneys = require('../assets/images/onboarding-sad-kidneys.png');
-const onboardingWaterfirstKidneyBowl = require('../assets/images/onboarding-waterfirst-kidney-bowl.png');
+const onboardingCelebrationDrop = require('../assets/images/onboarding-celebration-drop-v2.png');
+const onboardingKidneyCutaway = require('../assets/images/onboarding-kidney-cutaway-v2.png');
+const onboardingHappyDrop = require('../assets/images/onboarding-happy-drop-v2.png');
+const onboardingSadKidneys = require('../assets/images/onboarding-sad-kidneys-v2.png');
+const onboardingWaterfirstKidneyBowl = require('../assets/images/onboarding-waterfirst-kidney-bowl-v2.png');
+const waterfirstLogoDrop = require('../assets/images/waterfirst-logo-drop-v2.png');
 const intakeOptions = ['less than 50cl', '50cl - 1L', '1 - 1.5L', '1.5 - 2L', 'more than 2L'];
 type MaterialIconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
@@ -59,8 +60,6 @@ const obstacleOptions: { id: string; icon: MaterialIconName; label: string }[] =
   { id: 'amount', icon: 'help-circle-outline', label: "I don't know how much I need" },
   { id: 'consistency', icon: 'calendar-sync-outline', label: 'I just struggle with consistency' },
 ];
-const defaultObstacleIds = ['forget', 'distracted', 'consistency'];
-const defaultSelectedAppIds = ['instagram', 'tiktok', 'x'];
 const quickLogOptions = [
   { label: '+25cl', amountMl: 250 },
   { label: '+50cl', amountMl: 500 },
@@ -75,20 +74,24 @@ export default function OnboardingScreen() {
   const { profile, setPendingOnboardingPlan } = useProfileStore();
   const setPermissionState = useReminderStore((state) => state.setPermissionState);
   const [stepIndex, setStepIndex] = useState(0);
-  const [name, setName] = useState(profile.name || profile.firstName || 'Lebechi');
-  const [weight, setWeight] = useState('70.0');
+  const [name, setName] = useState(profile.name || profile.firstName || '');
+  const [weight, setWeight] = useState('');
+  const [hasAnsweredWeight, setHasAnsweredWeight] = useState(false);
   const [weightUnit, setWeightUnit] = useState<'kg' | 'lb'>('kg');
-  const [dailyIntake, setDailyIntake] = useState('1 - 1.5L');
-  const [obstacleIds, setObstacleIds] = useState<string[]>(defaultObstacleIds);
-  const [wakeTime, setWakeTime] = useState('07:00');
+  const [dailyIntake, setDailyIntake] = useState('');
+  const [obstacleIds, setObstacleIds] = useState<string[]>([]);
+  const [wakeTime, setWakeTime] = useState('');
+  const [hasAnsweredWakeTime, setHasAnsweredWakeTime] = useState(false);
   const [wakePeriod, setWakePeriod] = useState<'AM' | 'PM'>('AM');
-  const [sleepTime, setSleepTime] = useState('10:30');
+  const [sleepTime, setSleepTime] = useState('');
+  const [hasAnsweredSleepTime, setHasAnsweredSleepTime] = useState(false);
   const [sleepPeriod, setSleepPeriod] = useState<'AM' | 'PM'>('PM');
   const [remindersEnabled, setRemindersEnabled] = useState(false);
   const [isRequestingNotificationPermission, setIsRequestingNotificationPermission] = useState(false);
   const [shieldEnabled, setShieldEnabled] = useState(false);
-  const [selectedAppIds, setSelectedAppIds] = useState<string[]>(defaultSelectedAppIds);
-  const [firstLogMl, setFirstLogMl] = useState(250);
+  const [selectedAppIds, setSelectedAppIds] = useState<string[]>([]);
+  const [firstLogMl, setFirstLogMl] = useState(0);
+  const [hasAnsweredFirstLog, setHasAnsweredFirstLog] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [transitionDirection, setTransitionDirection] = useState(1);
   const isTransitioningRef = useRef(false);
@@ -136,6 +139,22 @@ export default function OnboardingScreen() {
   const currentStep = stepIndex + 1;
   const bottomSafePadding = Math.max(insets.bottom, Platform.OS === 'android' ? 72 : 24);
   const topSafePadding = Math.max(insets.top, 16);
+  const isPrimaryActionDisabled = isOnboardingPrimaryActionDisabled({
+    currentStep,
+    dailyIntake,
+    hasAnsweredFirstLog,
+    hasAnsweredSleepTime,
+    hasAnsweredWakeTime,
+    hasAnsweredWeight,
+    isRequestingNotificationPermission,
+    name,
+    obstacleIds,
+    remindersEnabled,
+    selectedAppIds,
+    sleepTime,
+    wakeTime,
+    weight,
+  });
 
   const goNext = () => {
     if (isTransitioningRef.current) {
@@ -226,6 +245,20 @@ export default function OnboardingScreen() {
   };
 
   const handlePrimaryPress = () => {
+    if (isPrimaryActionDisabled) {
+      return;
+    }
+
+    if (currentStep === 19) {
+      setShieldEnabled(true);
+      goNext();
+      return;
+    }
+
+    if (currentStep === 20 && selectedApps.length > 0) {
+      setShieldEnabled(true);
+    }
+
     goNext();
   };
 
@@ -233,6 +266,7 @@ export default function OnboardingScreen() {
     const cleanName = name.trim() || 'WaterFirst User';
     const [firstNameValue = '', ...remainingNames] = cleanName.split(/\s+/);
     const appPackageNames = selectedApps.map((app) => app.packageName);
+    const shouldProtectSelectedApps = shieldEnabled && selectedApps.length > 0;
     const savedProfile = {
       name: cleanName,
       firstName: firstNameValue,
@@ -246,8 +280,8 @@ export default function OnboardingScreen() {
       sleepTime: sleepTime24,
       unitPreference: (weightUnit === 'kg' ? 'metric' : 'imperial') as UnitPreference,
       notificationConsent: remindersEnabled,
-      softLockConsent: shieldEnabled,
-      softLockSelectedApplicationCount: shieldEnabled ? selectedApps.length : 0,
+      softLockConsent: shouldProtectSelectedApps,
+      softLockSelectedApplicationCount: shouldProtectSelectedApps ? selectedApps.length : 0,
       onboardingComplete: true,
     };
     const goal = {
@@ -257,12 +291,12 @@ export default function OnboardingScreen() {
     };
 
     setPendingOnboardingPlan({
-      appPackageNames: shieldEnabled ? appPackageNames : [],
+      appPackageNames: shouldProtectSelectedApps ? appPackageNames : [],
       checkpoints,
       firstLogMl,
       goal,
       profile: savedProfile,
-      selectedAppIds: shieldEnabled ? selectedAppIds : [],
+      selectedAppIds: shouldProtectSelectedApps ? selectedAppIds : [],
     });
     router.push('/create-account' as never);
   };
@@ -293,6 +327,7 @@ export default function OnboardingScreen() {
             firstLogMl,
             firstName,
             goalMl,
+            hasAnsweredFirstLog,
             name,
             obstacleIds,
             isRequestingNotificationPermission,
@@ -312,12 +347,34 @@ export default function OnboardingScreen() {
             onReminderToggle: handleReminderToggle,
             onSelectedAppToggle: (id) => toggleListValue(id, selectedAppIds, setSelectedAppIds),
             onShieldChange: setShieldEnabled,
-            onSleepPeriodChange: setSleepPeriod,
-            onSleepTimeChange: setSleepTime,
-            onWakePeriodChange: setWakePeriod,
-            onWakeTimeChange: setWakeTime,
-            onWeightChange: setWeight,
-            onWeightUnitChange: setWeightUnit,
+            onSleepAnswered: () => setHasAnsweredSleepTime(true),
+            onSleepPeriodChange: (value) => {
+              setHasAnsweredSleepTime(true);
+              setSleepPeriod(value);
+            },
+            onSleepTimeChange: (value) => {
+              setHasAnsweredSleepTime(true);
+              setSleepTime(value);
+            },
+            onWakeAnswered: () => setHasAnsweredWakeTime(true),
+            onWakePeriodChange: (value) => {
+              setHasAnsweredWakeTime(true);
+              setWakePeriod(value);
+            },
+            onWakeTimeChange: (value) => {
+              setHasAnsweredWakeTime(true);
+              setWakeTime(value);
+            },
+            onWeightAnswered: () => setHasAnsweredWeight(true),
+            onWeightChange: (value) => {
+              setHasAnsweredWeight(true);
+              setWeight(value);
+            },
+            onWeightUnitChange: (value) => {
+              setHasAnsweredWeight(true);
+              setWeightUnit(value);
+            },
+            onFirstLogAnsweredChange: setHasAnsweredFirstLog,
           })}
         </StepShell>
 
@@ -330,12 +387,15 @@ export default function OnboardingScreen() {
           <AnimatedEntrance delay={180} entranceKey={`cta-${currentStep}`}>
             <AnimatedButton
               mode="contained"
-              disabled={currentStep === 18 && isRequestingNotificationPermission}
+              disabled={isPrimaryActionDisabled}
               loading={currentStep === 18 && isRequestingNotificationPermission}
               onPress={handlePrimaryPress}
-              style={styles.primaryButton}
+              style={[styles.primaryButton, isPrimaryActionDisabled && styles.primaryButtonDisabled]}
               contentStyle={styles.primaryButtonContent}
-              labelStyle={styles.primaryButtonLabel}
+              labelStyle={[
+                styles.primaryButtonLabel,
+                isPrimaryActionDisabled && styles.primaryButtonLabelDisabled,
+              ]}
             >
               {getPrimaryLabel(currentStep)}
             </AnimatedButton>
@@ -382,6 +442,7 @@ type StepRenderProps = {
   firstLogMl: number;
   firstName: string;
   goalMl: number;
+  hasAnsweredFirstLog: boolean;
   isRequestingNotificationPermission: boolean;
   name: string;
   obstacleIds: string[];
@@ -395,16 +456,20 @@ type StepRenderProps = {
   weight: string;
   weightUnit: 'kg' | 'lb';
   onDailyIntakeChange: (value: string) => void;
+  onFirstLogAnsweredChange: (value: boolean) => void;
   onFirstLogChange: (value: number) => void;
   onNameChange: (value: string) => void;
   onObstacleToggle: (value: string) => void;
   onReminderToggle: (value: boolean) => void;
   onSelectedAppToggle: (value: string) => void;
   onShieldChange: (value: boolean) => void;
+  onSleepAnswered: () => void;
   onSleepPeriodChange: (value: 'AM' | 'PM') => void;
   onSleepTimeChange: (value: string) => void;
+  onWakeAnswered: () => void;
   onWakePeriodChange: (value: 'AM' | 'PM') => void;
   onWakeTimeChange: (value: string) => void;
+  onWeightAnswered: () => void;
   onWeightChange: (value: string) => void;
   onWeightUnitChange: (value: 'kg' | 'lb') => void;
 };
@@ -482,14 +547,21 @@ function renderStep(props: StepRenderProps) {
       return (
         <QuestionStep title="let's build your hydration goal." helper="what do you weigh?">
           <View style={styles.weightCard}>
+            <View style={styles.weightIconWrap}>
+              <MaterialCommunityIcons name="scale-bathroom" color={waterFirstBlue} size={20} />
+            </View>
             <NativeTextInput
               keyboardType="decimal-pad"
               onChangeText={props.onWeightChange}
+              onFocus={props.onWeightAnswered}
+              placeholder="0.0"
+              placeholderTextColor="#9EAFC2"
               style={styles.weightInput}
               value={props.weight}
             />
-            <Text style={styles.weightUnit}>{props.weightUnit}</Text>
-            <MaterialCommunityIcons name="chevron-down" color={waterFirstBlue} size={18} />
+            <View style={styles.weightUnitBadge}>
+              <Text style={styles.weightUnit}>{props.weightUnit}</Text>
+            </View>
           </View>
           <View style={styles.segmentRow}>
             {(['kg', 'lb'] as const).map((unit) => (
@@ -602,6 +674,7 @@ function renderStep(props: StepRenderProps) {
           <TimePickerCard
             period={props.wakePeriod}
             time={props.wakeTime}
+            onAnswered={props.onWakeAnswered}
             onPeriodChange={props.onWakePeriodChange}
             onTimeChange={props.onWakeTimeChange}
           />
@@ -614,6 +687,7 @@ function renderStep(props: StepRenderProps) {
           <TimePickerCard
             period={props.sleepPeriod}
             time={props.sleepTime}
+            onAnswered={props.onSleepAnswered}
             onPeriodChange={props.onSleepPeriodChange}
             onTimeChange={props.onSleepTimeChange}
           />
@@ -687,18 +761,23 @@ function renderStep(props: StepRenderProps) {
       return (
         <QuestionStep title={`one last thing, ${props.firstName}. let's start now.`} helper="have you had any water today?">
           <View style={styles.quickLogRow}>
-            {quickLogOptions.map((option) => (
-              <AnimatedTapTarget
-                accessibilityRole="button"
-                key={option.label}
-                onPress={() => props.onFirstLogChange(option.amountMl)}
-                style={[styles.quickPill, props.firstLogMl === option.amountMl && styles.quickPillActive]}
-              >
-                <Text style={[styles.quickText, props.firstLogMl === option.amountMl && styles.quickTextActive]}>
-                  {option.label}
-                </Text>
-              </AnimatedTapTarget>
-            ))}
+            {quickLogOptions.map((option) => {
+              const isSelected = props.hasAnsweredFirstLog && props.firstLogMl === option.amountMl;
+
+              return (
+                <AnimatedTapTarget
+                  accessibilityRole="button"
+                  key={option.label}
+                  onPress={() => {
+                    props.onFirstLogAnsweredChange(true);
+                    props.onFirstLogChange(option.amountMl);
+                  }}
+                  style={[styles.quickPill, isSelected && styles.quickPillActive]}
+                >
+                  <Text style={[styles.quickText, isSelected && styles.quickTextActive]}>{option.label}</Text>
+                </AnimatedTapTarget>
+              );
+            })}
           </View>
           <KidneyBowlArt compact />
           <WaterLoggedBurst burstKey={props.firstLogMl} />
@@ -888,7 +967,13 @@ function SplashStep() {
   return (
     <View style={styles.splashContent}>
       <Animated.View style={[styles.splashDropIcon, dropletStyle]}>
-        <MaterialCommunityIcons name="water" color="#FFFFFF" size={52} />
+        <Image
+          accessibilityIgnoresInvertColors
+          accessibilityLabel="WaterFirst water drop logo"
+          resizeMode="contain"
+          source={waterfirstLogoDrop}
+          style={styles.splashDropImage}
+        />
       </Animated.View>
       <AnimatedWritingTitle />
     </View>
@@ -1569,15 +1654,17 @@ function WaterDroplet({ index, progress }: { index: number; progress: SharedValu
 }
 
 type TimePickerCardProps = {
+  onAnswered: () => void;
   onPeriodChange: (value: 'AM' | 'PM') => void;
   onTimeChange: (value: string) => void;
   period: 'AM' | 'PM';
   time: string;
 };
 
-function TimePickerCard({ onPeriodChange, onTimeChange, period, time }: TimePickerCardProps) {
+function TimePickerCard({ onAnswered, onPeriodChange, onTimeChange, period, time }: TimePickerCardProps) {
   const reduceMotion = useReducedMotion();
   const pulseProgress = useSharedValue(1);
+  const [hourValue = '', minuteValue = ''] = time.split(':');
 
   useEffect(() => {
     if (!reduceMotion) {
@@ -1591,18 +1678,56 @@ function TimePickerCard({ onPeriodChange, onTimeChange, period, time }: TimePick
   const pulseStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pulseProgress.value }],
   }));
+  const updateTimePart = (part: 'hour' | 'minute', value: string) => {
+    onAnswered();
+
+    const nextValue = value.replace(/\D/g, '').slice(0, 2);
+    const nextHour = part === 'hour' ? nextValue : hourValue;
+    const nextMinute = part === 'minute' ? nextValue : minuteValue;
+
+    if (!nextHour && !nextMinute) {
+      onTimeChange('');
+      return;
+    }
+
+    onTimeChange(`${nextHour}:${nextMinute}`);
+  };
 
   return (
     <Animated.View style={[styles.timePickerRow, pulseStyle]}>
-      <NativeTextInput
-        keyboardType="numbers-and-punctuation"
-        onChangeText={(value) => onTimeChange(value.replace(/\s*(AM|PM)$/i, ''))}
-        style={styles.timePickerInput}
-        value={time}
-      />
+      <View style={styles.timeField}>
+        <Text style={styles.timeFieldLabel}>hour</Text>
+        <NativeTextInput
+          keyboardType="number-pad"
+          maxLength={2}
+          onChangeText={(value) => updateTimePart('hour', value)}
+          onFocus={onAnswered}
+          placeholder="07"
+          placeholderTextColor="#5F7D91"
+          style={styles.timePickerInput}
+          value={hourValue}
+        />
+      </View>
+      <Text style={styles.timeSeparator}>:</Text>
+      <View style={styles.timeField}>
+        <Text style={styles.timeFieldLabel}>min</Text>
+        <NativeTextInput
+          keyboardType="number-pad"
+          maxLength={2}
+          onChangeText={(value) => updateTimePart('minute', value)}
+          onFocus={onAnswered}
+          placeholder="00"
+          placeholderTextColor="#5F7D91"
+          style={styles.timePickerInput}
+          value={minuteValue}
+        />
+      </View>
       <Pressable
         accessibilityRole="button"
-        onPress={() => onPeriodChange(period === 'AM' ? 'PM' : 'AM')}
+        onPress={() => {
+          onAnswered();
+          onPeriodChange(period === 'AM' ? 'PM' : 'AM');
+        }}
         style={styles.periodPill}
       >
         <Text style={styles.periodText}>{period}</Text>
@@ -1683,6 +1808,90 @@ function SelectableRow({ checked, icon, iconColor, label, onPress, type = 'check
   );
 }
 
+type OnboardingPrimaryActionState = {
+  currentStep: number;
+  dailyIntake: string;
+  hasAnsweredFirstLog: boolean;
+  hasAnsweredSleepTime: boolean;
+  hasAnsweredWakeTime: boolean;
+  hasAnsweredWeight: boolean;
+  isRequestingNotificationPermission: boolean;
+  name: string;
+  obstacleIds: string[];
+  remindersEnabled: boolean;
+  selectedAppIds: string[];
+  sleepTime: string;
+  wakeTime: string;
+  weight: string;
+};
+
+function isOnboardingPrimaryActionDisabled({
+  currentStep,
+  dailyIntake,
+  hasAnsweredFirstLog,
+  hasAnsweredSleepTime,
+  hasAnsweredWakeTime,
+  hasAnsweredWeight,
+  isRequestingNotificationPermission,
+  name,
+  obstacleIds,
+  remindersEnabled,
+  selectedAppIds,
+  sleepTime,
+  wakeTime,
+  weight,
+}: OnboardingPrimaryActionState) {
+  switch (currentStep) {
+    case 6:
+      return name.trim().length === 0;
+    case 7:
+      return !hasAnsweredWeight || !isValidWeightInput(weight);
+    case 8:
+      return dailyIntake.trim().length === 0;
+    case 9:
+      return obstacleIds.length === 0;
+    case 15:
+      return !hasAnsweredWakeTime || !isValidOnboardingTime(wakeTime);
+    case 16:
+      return !hasAnsweredSleepTime || !isValidOnboardingTime(sleepTime);
+    case 18:
+      return isRequestingNotificationPermission || !remindersEnabled;
+    case 20:
+      return selectedAppIds.length === 0;
+    case 22:
+      return !hasAnsweredFirstLog;
+    default:
+      return false;
+  }
+}
+
+function isValidWeightInput(weight: string) {
+  const value = Number(weight.trim().replace(',', '.'));
+
+  return Number.isFinite(value) && value > 0;
+}
+
+function isValidOnboardingTime(time: string) {
+  const match = time.trim().match(/^(\d{1,2}):(\d{1,2})$/);
+
+  if (!match) {
+    return false;
+  }
+
+  const [, hourText = '', minuteText = ''] = match;
+  const hours = Number(hourText);
+  const minutes = Number(minuteText);
+
+  return (
+    Number.isInteger(hours) &&
+    Number.isInteger(minutes) &&
+    hours >= 1 &&
+    hours <= 12 &&
+    minutes >= 0 &&
+    minutes <= 59
+  );
+}
+
 function getPrimaryLabel(step: number) {
   if (step === 4) return 'show me how';
   if (step === 11) return 'build my plan';
@@ -1725,7 +1934,7 @@ function buildActivityDescription(dailyIntake: string, obstacleIds: string[]) {
     .map((option) => option.label)
     .join(', ');
 
-  return `Usually drinks ${dailyIntake}. Main hydration blockers: ${selectedObstacles || 'not specified'}.`;
+  return `Usually drinks ${dailyIntake || 'not specified'}. Main hydration blockers: ${selectedObstacles || 'not specified'}.`;
 }
 
 function estimateStartingGoalMl(weightValue: number, unit: 'kg' | 'lb') {
@@ -1896,9 +2105,15 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   splashDropIcon: {
+    height: 74,
     position: 'absolute',
     top: 74,
+    width: 74,
     zIndex: 2,
+  },
+  splashDropImage: {
+    height: '100%',
+    width: '100%',
   },
   splashWritingRow: {
     alignItems: 'center',
@@ -1927,6 +2142,10 @@ const styles = StyleSheet.create({
     maxWidth: 382,
     width: '100%',
   },
+  primaryButtonDisabled: {
+    backgroundColor: '#B8C6D6',
+    opacity: 0.72,
+  },
   primaryButtonContent: {
     minHeight: 52,
   },
@@ -1934,6 +2153,9 @@ const styles = StyleSheet.create({
     color: onboardingBackground,
     fontFamily: 'Inter_700Bold',
     fontSize: 12,
+  },
+  primaryButtonLabelDisabled: {
+    color: '#F7FBFF',
   },
   saveMessage: {
     color: waterFirstBlue,
@@ -2104,42 +2326,70 @@ const styles = StyleSheet.create({
   },
   weightCard: {
     alignItems: 'center',
-    backgroundColor: onboardingPanel,
+    backgroundColor: onboardingPanelRaised,
     borderColor: borderBlue,
-    borderRadius: 12,
+    borderRadius: 18,
     borderWidth: 1,
-    elevation: 3,
     flexDirection: 'row',
-    gap: spacing.sm,
-    justifyContent: 'center',
-    maxWidth: 250,
-    padding: spacing.md,
+    gap: spacing.md,
+    maxWidth: 292,
+    minHeight: 88,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     shadowColor: waterFirstBlue,
-    shadowOpacity: 0.16,
-    shadowRadius: 12,
+    shadowOffset: { height: 10, width: 0 },
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
     width: '100%',
   },
+  weightIconWrap: {
+    alignItems: 'center',
+    backgroundColor: lightBlue,
+    borderColor: borderBlue,
+    borderRadius: 17,
+    borderWidth: 1,
+    height: 42,
+    justifyContent: 'center',
+    width: 42,
+  },
   weightInput: {
-    color: waterFirstBlue,
-    fontFamily: 'Inter_700Bold',
-    fontSize: 35,
-    minWidth: 105,
-    textAlign: 'right',
+    color: darkText,
+    flex: 1,
+    fontFamily: 'Inter_800ExtraBold',
+    fontSize: 34,
+    minWidth: 0,
+    padding: 0,
+    textAlign: 'center',
+  },
+  weightUnitBadge: {
+    alignItems: 'center',
+    backgroundColor: lightBlue,
+    borderColor: borderBlue,
+    borderRadius: 14,
+    borderWidth: 1,
+    height: 36,
+    justifyContent: 'center',
+    minWidth: 44,
+    paddingHorizontal: spacing.sm,
   },
   weightUnit: {
-    color: darkText,
+    color: waterFirstBlue,
     fontFamily: 'Inter_700Bold',
-    fontSize: 13,
+    fontSize: 12,
+    textTransform: 'uppercase',
   },
   segmentRow: {
     backgroundColor: onboardingPanel,
-    borderRadius: 9,
+    borderColor: borderBlue,
+    borderRadius: 14,
+    borderWidth: 1,
     flexDirection: 'row',
-    padding: 3,
+    gap: 3,
+    padding: 4,
   },
   segmentButton: {
-    borderRadius: 7,
-    minWidth: 58,
+    borderRadius: 10,
+    minWidth: 64,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
@@ -2312,20 +2562,38 @@ const styles = StyleSheet.create({
   timePickerRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: spacing.md,
+    gap: spacing.sm,
+    justifyContent: 'center',
+    width: '100%',
+  },
+  timeField: {
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  timeFieldLabel: {
+    color: mutedText,
+    fontFamily: 'Inter_700Bold',
+    fontSize: 10,
+    textTransform: 'uppercase',
   },
   timePickerInput: {
-    backgroundColor: onboardingPanel,
+    backgroundColor: onboardingPanelRaised,
     borderColor: borderBlue,
     borderRadius: 12,
     borderWidth: 1,
-    color: waterFirstBlue,
-    fontFamily: 'Inter_700Bold',
-    fontSize: 36,
-    minHeight: 78,
-    minWidth: 154,
-    paddingHorizontal: spacing.md,
+    color: darkText,
+    fontFamily: 'Inter_800ExtraBold',
+    fontSize: 32,
+    height: 70,
+    paddingHorizontal: spacing.sm,
     textAlign: 'center',
+    width: 82,
+  },
+  timeSeparator: {
+    color: waterFirstBlue,
+    fontFamily: 'Inter_800ExtraBold',
+    fontSize: 30,
+    paddingTop: 20,
   },
   periodPill: {
     alignItems: 'center',
@@ -2333,9 +2601,10 @@ const styles = StyleSheet.create({
     borderColor: borderBlue,
     borderRadius: 12,
     borderWidth: 1,
-    height: 68,
+    height: 70,
     justifyContent: 'center',
-    width: 70,
+    marginTop: 19,
+    width: 64,
   },
   periodText: {
     color: waterFirstBlue,

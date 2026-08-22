@@ -24,6 +24,7 @@ export type ScheduledReminder = {
 };
 
 const notificationChannelId = 'hydration-checkpoints';
+const reminderSource = 'waterfirst-hydration';
 
 const reminderMessages: Record<number, string> = {
   15: 'Next water schedule in 15 minutes. Get ready to drink some water.',
@@ -62,8 +63,15 @@ export async function requestReminderPermissions() {
 }
 
 export async function cancelReminderNotifications(notificationIds: string[]) {
+  if (Platform.OS === 'web') {
+    return;
+  }
+
+  const scheduledReminders = await getScheduledHydrationReminderIds();
+  const identifiers = new Set([...notificationIds, ...scheduledReminders]);
+
   await Promise.all(
-    notificationIds.map((identifier) =>
+    [...identifiers].map((identifier) =>
       Notifications.cancelScheduledNotificationAsync(identifier).catch(() => undefined),
     ),
   );
@@ -97,6 +105,7 @@ export async function scheduleCheckpointReminders(input: ReminderScheduleInput) 
           checkpointId: request.checkpoint.id,
           dueMinutes: request.checkpoint.dueMinutes,
           offsetMinutes: request.offsetMinutes,
+          reminderSource,
           timeZone: getDeviceTimeZone(),
         },
         sound: true,
@@ -130,6 +139,29 @@ export function buildReminderRequests(checkpoints: HydrationCheckpoint[], now = 
         ...getLocalTriggerTime(checkpoint.dueMinutes, offsetMinutes, now),
         offsetMinutes,
       }))
+  );
+}
+
+async function getScheduledHydrationReminderIds() {
+  const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync().catch(() => []);
+
+  return scheduledNotifications
+    .filter(isHydrationReminderRequest)
+    .map((notification) => notification.identifier);
+}
+
+function isHydrationReminderRequest(notification: Notifications.NotificationRequest) {
+  const data = notification.content.data as Record<string, unknown> | undefined;
+
+  if (data?.reminderSource === reminderSource) {
+    return true;
+  }
+
+  return (
+    notification.content.title === 'WaterFirst' &&
+    typeof data?.checkpointId === 'string' &&
+    typeof data?.dueMinutes === 'number' &&
+    typeof data?.offsetMinutes === 'number'
   );
 }
 

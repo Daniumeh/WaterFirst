@@ -11,9 +11,9 @@ import { colors, radius, spacing, typography } from '@/src/theme/tokens';
 
 import { DashboardIcon, dashboardIcons } from './DashboardIcon';
 
-const sachetWaterImage = require('../../../assets/images/sachet-water-50cl.png');
-const bottleWater75clImage = require('../../../assets/images/bottle-water-75cl.png');
-const bottleWater150clImage = require('../../../assets/images/bottle-water-150cl.png');
+const sachetWaterImage = require('../../../assets/images/sachet-water-50cl-v2.png');
+const bottleWater75clImage = require('../../../assets/images/bottle-water-75cl-v2.png');
+const bottleWater150clImage = require('../../../assets/images/bottle-water-150cl-v2.png');
 
 type QuickLogWaterProps = {
   customAmount: string;

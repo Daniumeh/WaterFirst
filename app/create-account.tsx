@@ -1,18 +1,23 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Text, TextInput } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { signUpWithProfile } from '@/src/features/auth/authService';
 import { saveOnboardingPlan } from '@/src/features/hydration/hydrationRepository';
-import { scheduleCheckpointReminders } from '@/src/features/reminders/reminderService';
+import {
+  cancelReminderNotifications,
+  scheduleCheckpointReminders,
+} from '@/src/features/reminders/reminderService';
 import { hasSupabaseConfig } from '@/src/lib/supabase';
 import { useAccountabilityStore } from '@/src/store/accountabilityStore';
 import { useHydrationStore } from '@/src/store/hydrationStore';
 import { useProfileStore } from '@/src/store/profileStore';
 import { useReminderStore } from '@/src/store/reminderStore';
 import { colors, radius, spacing, typography } from '@/src/theme/tokens';
+
+const waterfirstLogoDrop = require('../assets/images/waterfirst-logo-drop-v2.png');
 
 function splitName(name: string) {
   const cleanName = name.trim() || 'WaterFirst User';
@@ -95,9 +100,11 @@ export default function CreateAccountScreen() {
 
     try {
       const result = await signUpWithProfile({
+        appPackageNames: pendingPlan.appPackageNames,
         email: cleanEmail,
         password,
         profile: completedProfile,
+        selectedAppIds: pendingPlan.selectedAppIds,
       });
 
       if (result.needsEmailConfirmation || !result.session?.user) {
@@ -137,6 +144,7 @@ export default function CreateAccountScreen() {
           });
         }
       } else {
+        await cancelReminderNotifications([]);
         setScheduledNotificationIds([]);
         updateReminderSettings({
           activeEnd: completedProfile.sleepTime,
@@ -189,7 +197,13 @@ export default function CreateAccountScreen() {
         <View style={styles.accountPanel}>
           <View style={styles.header}>
             <View style={styles.dropMark}>
-              <View style={styles.dropCore} />
+              <Image
+                accessibilityIgnoresInvertColors
+                accessibilityLabel="WaterFirst logo"
+                resizeMode="contain"
+                source={waterfirstLogoDrop}
+                style={styles.logoImage}
+              />
             </View>
             <Text style={styles.title}>Save your hydration plan</Text>
             <Text style={styles.subtitle}>
@@ -316,23 +330,13 @@ const styles = StyleSheet.create({
   },
   dropMark: {
     alignItems: 'center',
-    backgroundColor: colors.wash,
-    borderColor: colors.line,
-    borderWidth: 1,
-    borderRadius: 34,
-    height: 68,
+    height: 88,
     justifyContent: 'center',
-    width: 68,
+    width: 88,
   },
-  dropCore: {
-    backgroundColor: waterFirstBlue,
-    borderBottomLeftRadius: 18,
-    borderBottomRightRadius: 18,
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
-    height: 36,
-    transform: [{ rotate: '45deg' }],
-    width: 36,
+  logoImage: {
+    height: 84,
+    width: 84,
   },
   title: {
     color: colors.text,

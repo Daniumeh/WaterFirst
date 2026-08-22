@@ -1,18 +1,29 @@
 import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Text, TextInput } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { buildProfileFromUser, signInWithEmail } from '@/src/features/auth/authService';
+import {
+  buildProfileFromUser,
+  buildProtectedAppsFromUser,
+  signInWithEmail,
+} from '@/src/features/auth/authService';
 import { hasSupabaseConfig } from '@/src/lib/supabase';
+import { useAccountabilityStore } from '@/src/store/accountabilityStore';
 import { useProfileStore } from '@/src/store/profileStore';
 import { colors, glassShadow, radius, spacing, typography } from '@/src/theme/tokens';
+
+const waterfirstLogoDrop = require('../assets/images/waterfirst-logo-drop-v2.png');
 
 export default function SignInScreen() {
   const insets = useSafeAreaInsets();
   const profile = useProfileStore((state) => state.profile);
   const completeOnboarding = useProfileStore((state) => state.completeOnboarding);
+  const setHydrationShieldPermissionStatus = useAccountabilityStore(
+    (state) => state.setHydrationShieldPermissionStatus,
+  );
+  const setProtectedApps = useAccountabilityStore((state) => state.setProtectedApps);
   const [email, setEmail] = useState(profile.email);
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -41,7 +52,12 @@ export default function SignInScreen() {
         throw new Error('Could not start a session. Check your email confirmation status.');
       }
 
-      completeOnboarding(buildProfileFromUser(result.session.user));
+      const signedInProfile = buildProfileFromUser(result.session.user);
+      const protectedApps = buildProtectedAppsFromUser(result.session.user);
+
+      setProtectedApps(protectedApps.selectedAppIds, protectedApps.appPackageNames);
+      setHydrationShieldPermissionStatus(signedInProfile.softLockConsent ? 'enabled' : 'disabled');
+      completeOnboarding(signedInProfile);
       router.replace('/(tabs)');
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Could not sign in.');
@@ -71,9 +87,13 @@ export default function SignInScreen() {
       >
         <View style={styles.headerCard}>
           <View style={styles.logoMark}>
-            <View style={styles.logoBarVertical} />
-            <View style={styles.logoBarHorizontal} />
-            <View style={styles.logoDot} />
+            <Image
+              accessibilityIgnoresInvertColors
+              accessibilityLabel="WaterFirst logo"
+              resizeMode="contain"
+              source={waterfirstLogoDrop}
+              style={styles.logoImage}
+            />
           </View>
           <Text style={styles.kicker} variant="labelLarge">
             Welcome back
@@ -202,37 +222,12 @@ const styles = StyleSheet.create({
   logoMark: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 74,
-    height: 74,
-    borderColor: colors.line,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    backgroundColor: 'rgba(3, 16, 28, 0.7)',
+    width: 92,
+    height: 92,
   },
-  logoBarVertical: {
-    position: 'absolute',
-    width: 8,
-    height: 46,
-    borderRadius: 4,
-    backgroundColor: colors.cyan,
-    transform: [{ rotate: '45deg' }],
-  },
-  logoBarHorizontal: {
-    position: 'absolute',
-    width: 46,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.cyanSoft,
-    transform: [{ rotate: '45deg' }],
-  },
-  logoDot: {
-    position: 'absolute',
-    right: 18,
-    top: 17,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: colors.orange,
+  logoImage: {
+    height: 88,
+    width: 88,
   },
   kicker: {
     color: colors.cyan,

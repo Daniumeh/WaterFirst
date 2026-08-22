@@ -18,6 +18,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppScreen } from '@/src/components/layout/AppScreen';
 import { AuthProvider } from '@/src/features/auth/AuthProvider';
 import { configureNotificationPresentation } from '@/src/features/reminders/reminderService';
+import { preloadAppImages } from '@/src/lib/appAssets';
 import { waterFirstTheme } from '@/src/theme/paperTheme';
 
 export {
@@ -37,6 +38,8 @@ const queryClient = new QueryClient();
 configureNotificationPresentation();
 
 export default function RootLayout() {
+  const [assetsLoaded, setAssetsLoaded] = useState(false);
+  const [assetLoadTimedOut, setAssetLoadTimedOut] = useState(false);
   const [fontLoadTimedOut, setFontLoadTimedOut] = useState(false);
   const [loaded, error] = useFonts({
     Inter_400Regular,
@@ -59,12 +62,37 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    if (loaded || fontLoadTimedOut) {
+    let isMounted = true;
+
+    preloadAppImages()
+      .catch(() => null)
+      .finally(() => {
+        if (isMounted) {
+          setAssetsLoaded(true);
+        }
+      });
+
+    const timeout = setTimeout(() => {
+      if (isMounted) {
+        setAssetLoadTimedOut(true);
+      }
+    }, 1800);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timeout);
+    };
+  }, []);
+
+  const isReady = (loaded || fontLoadTimedOut) && (assetsLoaded || assetLoadTimedOut);
+
+  useEffect(() => {
+    if (isReady) {
       SplashScreen.hideAsync();
     }
-  }, [fontLoadTimedOut, loaded]);
+  }, [isReady]);
 
-  if (!loaded && !fontLoadTimedOut) {
+  if (!isReady) {
     return null;
   }
 

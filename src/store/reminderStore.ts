@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
 type ReminderSettings = {
   activeEnd: string;
@@ -19,23 +21,38 @@ type ReminderStore = {
   updateSettings: (settings: Partial<ReminderSettings>) => void;
 };
 
-export const useReminderStore = create<ReminderStore>((set) => ({
-  pausedUntil: null,
-  permissionMessage: null,
-  permissionStatus: 'Not requested',
-  scheduledNotificationIds: [],
-  settings: {
-    activeStart: '07:00',
-    activeEnd: '22:30',
-    enabled: true,
-    snoozeMinutes: 30,
-  },
-  pauseUntil: (pausedUntil) => set({ pausedUntil }),
-  setPermissionState: (permissionStatus, permissionMessage = null) =>
-    set({ permissionMessage, permissionStatus }),
-  setScheduledNotificationIds: (scheduledNotificationIds) => set({ scheduledNotificationIds }),
-  updateSettings: (settings) =>
-    set((state) => ({
-      settings: { ...state.settings, ...settings },
-    })),
-}));
+export const useReminderStore = create<ReminderStore>()(
+  persist(
+    (set) => ({
+      pausedUntil: null,
+      permissionMessage: null,
+      permissionStatus: 'Not requested',
+      scheduledNotificationIds: [],
+      settings: {
+        activeStart: '07:00',
+        activeEnd: '22:30',
+        enabled: true,
+        snoozeMinutes: 30,
+      },
+      pauseUntil: (pausedUntil) => set({ pausedUntil }),
+      setPermissionState: (permissionStatus, permissionMessage = null) =>
+        set({ permissionMessage, permissionStatus }),
+      setScheduledNotificationIds: (scheduledNotificationIds) => set({ scheduledNotificationIds }),
+      updateSettings: (settings) =>
+        set((state) => ({
+          settings: { ...state.settings, ...settings },
+        })),
+    }),
+    {
+      name: 'waterfirst-reminders',
+      partialize: (state) => ({
+        pausedUntil: state.pausedUntil,
+        permissionMessage: state.permissionMessage,
+        permissionStatus: state.permissionStatus,
+        scheduledNotificationIds: state.scheduledNotificationIds,
+        settings: state.settings,
+      }),
+      storage: createJSONStorage(() => AsyncStorage),
+    },
+  ),
+);
